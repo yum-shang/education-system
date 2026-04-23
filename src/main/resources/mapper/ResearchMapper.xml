@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.education.system.research.repository.ResearchRepository">
+    <insert id="insertProject" parameterType="com.example.education.system.research.model.ResearchProject">
+        INSERT INTO research_projects (project_name, description, teacher_id, status, start_date, end_date, created_at)
+        VALUES (#{projectName}, #{description}, #{teacherId}, #{status}, #{startDate}, #{endDate}, #{createdAt})
+    </insert>
+
+    <select id="findProjects" resultType="com.example.education.system.research.model.ResearchProject">
+        SELECT * FROM research_projects
+        WHERE 1=1
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        <if test="teacherId != null">
+            AND teacher_id = #{teacherId}
+        </if>
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="findProjectById" resultType="com.example.education.system.research.model.ResearchProject">
+        SELECT * FROM research_projects WHERE project_id = #{projectId}
+    </select>
+
+    <insert id="insertApplication" parameterType="com.example.education.system.research.model.ProjectApplication">
+        INSERT INTO project_applications (project_id, student_id, application_letter, status, apply_time)
+        VALUES (#{projectId}, #{studentId}, #{applicationLetter}, #{status}, #{applyTime})
+    </insert>
+
+    <update id="updateApplicationStatus">
+        UPDATE project_applications SET
+        status = #{status},
+        review_time = #{reviewTime}
+        WHERE application_id = #{applicationId}
+    </update>
+
+    <select id="findApplications" resultType="com.example.education.system.research.model.ProjectApplication">
+        SELECT * FROM project_applications
+        WHERE 1=1
+        <if test="projectId != null">
+            AND project_id = #{projectId}
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+</mapper>

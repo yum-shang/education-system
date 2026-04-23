@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.education.system.auth.repository.UserRepository">
+    <select id="findByUsername" resultType="com.example.education.system.auth.model.User">
+        SELECT * FROM users WHERE username = #{username}
+    </select>
+    <select id="findByEmail" resultType="com.example.education.system.auth.model.User">
+        SELECT * FROM users WHERE email = #{email}
+    </select>
+    <select id="findByPhone" resultType="com.example.education.system.auth.model.User">
+        SELECT * FROM users WHERE phone = #{phone}
+    </select>
+    <insert id="insert" parameterType="com.example.education.system.auth.model.User" useGeneratedKeys="true" keyProperty="userId">
+        INSERT INTO users (username, password, email, phone, role, avatar_id, created_at, updated_at)
+        VALUES (#{username}, #{password}, #{email}, #{phone}, #{role}, #{avatarId}, #{createdAt}, #{updatedAt})
+    </insert>
+    <update id="update" parameterType="com.example.education.system.auth.model.User">
+        UPDATE users SET
+        password = #{password},
+        email = #{email},
+        phone = #{phone},
+        role = #{role},
+        avatar_id = #{avatarId},
+        updated_at = #{updatedAt}
+        WHERE user_id = #{userId}
+    </update>
+</mapper>

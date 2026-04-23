@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.education.system.innovation.repository.InnovationRepository">
+    <insert id="insertTeam" parameterType="com.example.education.system.innovation.model.InnovationTeam">
+        INSERT INTO innovation_teams (team_name, project_name, leader_id, status, description, created_at)
+        VALUES (#{teamName}, #{projectName}, #{leaderId}, #{status}, #{description}, #{createdAt})
+    </insert>
+
+    <select id="findTeams" resultType="com.example.education.system.innovation.model.InnovationTeam">
+        SELECT * FROM innovation_teams
+        WHERE 1=1
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        <if test="leaderId != null">
+            AND leader_id = #{leaderId}
+        </if>
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="findTeamById" resultType="com.example.education.system.innovation.model.InnovationTeam">
+        SELECT * FROM innovation_teams WHERE team_id = #{teamId}
+    </select>
+
+    <insert id="insertTeamApplication" parameterType="com.example.education.system.innovation.model.TeamApplication">
+        INSERT INTO team_applications (team_id, student_id, application_letter, status, apply_time)
+        VALUES (#{teamId}, #{studentId}, #{applicationLetter}, #{status}, #{applyTime})
+    </insert>
+
+    <update id="updateTeamApplicationStatus">
+        UPDATE team_applications SET
+        status = #{status},
+        review_time = #{reviewTime}
+        WHERE application_id = #{applicationId}
+    </update>
+
+    <select id="findTeamApplications" resultType="com.example.education.system.innovation.model.TeamApplication">
+        SELECT * FROM team_applications
+        WHERE 1=1
+        <if test="teamId != null">
+            AND team_id = #{teamId}
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+</mapper>

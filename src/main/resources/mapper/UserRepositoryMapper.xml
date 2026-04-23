@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.education.system.users.repository.UserRepository">
+    <!-- 用户相关操作 -->
+    <select id="findUsers" resultType="com.example.education.system.auth.model.User">
+        SELECT * FROM users
+        WHERE 1=1
+        <if test="role != null and role != ''">
+            AND role = #{role}
+        </if>
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countUsers" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM users
+        WHERE 1=1
+        <if test="role != null and role != ''">
+            AND role = #{role}
+        </if>
+    </select>
+
+    <select id="findUserById" resultType="com.example.education.system.auth.model.User">
+        SELECT * FROM users WHERE user_id = #{userId}
+    </select>
+
+    <update id="updateUser" parameterType="com.example.education.system.auth.model.User">
+        UPDATE users SET
+        email = #{email},
+        phone = #{phone},
+        avatar_id = #{avatarId},
+        updated_at = CURRENT_TIMESTAMP
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 教师相关操作 -->
+    <select id="findTeacherById" resultType="com.example.education.system.users.model.Teacher">
+        SELECT * FROM teachers WHERE teacher_id = #{teacherId}
+    </select>
+
+    <insert id="insertTeacher" parameterType="com.example.education.system.users.model.Teacher">
+        INSERT INTO teachers (teacher_id, name, title, department, bio)
+        VALUES (#{teacherId}, #{name}, #{title}, #{department}, #{bio})
+    </insert>
+
+    <update id="updateTeacher" parameterType="com.example.education.system.users.model.Teacher">
+        UPDATE teachers SET
+        name = #{name},
+        title = #{title},
+        department = #{department},
+        bio = #{bio}
+        WHERE teacher_id = #{teacherId}
+    </update>
+
+    <!-- 学生相关操作 -->
+    <select id="findStudentById" resultType="com.example.education.system.users.model.Student">
+        SELECT * FROM students WHERE student_id = #{studentId}
+    </select>
+
+    <insert id="insertStudent" parameterType="com.example.education.system.users.model.Student">
+        INSERT INTO students (student_id, name, student_number, major, grade, class)
+        VALUES (#{studentId}, #{name}, #{studentNumber}, #{major}, #{grade}, #{clazz})
+    </insert>
+
+    <update id="updateStudent" parameterType="com.example.education.system.users.model.Student">
+        UPDATE students SET
+        name = #{name},
+        student_number = #{studentNumber},
+        major = #{major},
+        grade = #{grade},
+        class = #{clazz}
+        WHERE student_id = #{studentId}
+    </update>
+</mapper>

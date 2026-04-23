@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.education.system.grades.repository.GradeRepository">
+    <insert id="insertGrade" parameterType="com.example.education.system.grades.model.Grade">
+        INSERT INTO grades (enrollment_id, score, grade_level, teacher_id, comment, created_at)
+        VALUES (#{enrollmentId}, #{score}, #{gradeLevel}, #{teacherId}, #{comment}, #{createdAt})
+    </insert>
+
+    <update id="updateGrade" parameterType="com.example.education.system.grades.model.Grade">
+        UPDATE grades SET
+        score = #{score},
+        grade_level = #{gradeLevel},
+        comment = #{comment}
+        WHERE grade_id = #{gradeId}
+    </update>
+
+    <select id="findGradeById" resultType="com.example.education.system.grades.model.Grade">
+        SELECT * FROM grades WHERE grade_id = #{gradeId}
+    </select>
+
+    <select id="findGradesByScheduleId" resultType="com.example.education.system.grades.model.Grade">
+        SELECT g.* FROM grades g
+        JOIN course_enrollments ce ON g.enrollment_id = ce.enrollment_id
+        WHERE ce.schedule_id = #{scheduleId}
+        <if test="gradeLevel != null and gradeLevel != ''">
+            AND g.grade_level = #{gradeLevel}
+        </if>
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="findGradesByStudentId" resultType="com.example.education.system.grades.model.Grade">
+        SELECT g.* FROM grades g
+        JOIN course_enrollments ce ON g.enrollment_id = ce.enrollment_id
+        JOIN course_schedules cs ON ce.schedule_id = cs.schedule_id
+        WHERE ce.student_id = #{studentId}
+        <if test="semester != null and semester != ''">
+            AND cs.semester = #{semester}
+        </if>
+        <if test="year != null">
+            AND cs.year = #{year}
+        </if>
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+</mapper>

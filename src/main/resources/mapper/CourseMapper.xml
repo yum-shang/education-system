@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.education.system.courses.repository.CourseRepository">
+    <insert id="insertCourse" parameterType="com.example.education.system.courses.model.Course">
+        INSERT INTO courses (course_name, credit, course_code, description)
+        VALUES (#{courseName}, #{credit}, #{courseCode}, #{description})
+    </insert>
+
+    <select id="findCourses" resultType="com.example.education.system.courses.model.Course">
+        SELECT * FROM courses
+        WHERE 1=1
+        <if test="courseName != null and courseName != ''">
+            AND course_name LIKE CONCAT('%', #{courseName}, '%')
+        </if>
+        <if test="courseCode != null and courseCode != ''">
+            AND course_code LIKE CONCAT('%', #{courseCode}, '%')
+        </if>
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="findCourseById" resultType="com.example.education.system.courses.model.Course">
+        SELECT * FROM courses WHERE course_id = #{courseId}
+    </select>
+
+    <update id="updateCourse" parameterType="com.example.education.system.courses.model.Course">
+        UPDATE courses SET
+        course_name = #{courseName},
+        credit = #{credit},
+        course_code = #{courseCode},
+        description = #{description}
+        WHERE course_id = #{courseId}
+    </update>
+
+    <delete id="deleteCourse" parameterType="java.lang.Integer">
+        DELETE FROM courses WHERE course_id = #{courseId}
+    </delete>
+
+    <insert id="insertSchedule" parameterType="com.example.education.system.courses.model.CourseSchedule">
+        INSERT INTO course_schedules (course_id, teacher_id, classroom, day_of_week, start_time, end_time, semester, year)
+        VALUES (#{courseId}, #{teacherId}, #{classroom}, #{dayOfWeek}, #{startTime}, #{endTime}, #{semester}, #{year})
+    </insert>
+
+    <select id="findSchedules" resultType="com.example.education.system.courses.model.CourseSchedule">
+        SELECT * FROM course_schedules
+        WHERE 1=1
+        <if test="courseId != null">
+            AND course_id = #{courseId}
+        </if>
+        <if test="teacherId != null">
+            AND teacher_id = #{teacherId}
+        </if>
+        <if test="semester != null and semester != ''">
+            AND semester = #{semester}
+        </if>
+        <if test="year != null">
+            AND year = #{year}
+        </if>
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+</mapper>
