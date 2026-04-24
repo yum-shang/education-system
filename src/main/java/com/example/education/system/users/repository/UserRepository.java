@@ -5,9 +5,11 @@ import com.example.education.system.users.model.Teacher;
 import com.example.education.system.users.model.Student;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+@Repository("userRepository")
 @Mapper
 public interface UserRepository {
     // 用户相关操作

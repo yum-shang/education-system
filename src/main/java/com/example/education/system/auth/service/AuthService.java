@@ -5,8 +5,11 @@ import com.example.education.system.auth.dto.LoginRequest;
 import com.example.education.system.auth.dto.AuthResponse;
 import com.example.education.system.auth.model.User;
 import com.example.education.system.auth.repository.UserRepository;
+import com.example.education.system.users.model.Teacher;
+import com.example.education.system.users.model.Student;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,7 +22,12 @@ import java.util.Date;
 public class AuthService {
 
     @Autowired
+    @Qualifier("authUserRepository")
     private UserRepository authUserRepository;
+
+    @Autowired
+    @Qualifier("userRepository")
+    private com.example.education.system.users.repository.UserRepository usersUserRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -64,6 +72,27 @@ public class AuthService {
         user.setUpdatedAt(new Timestamp(new Date().getTime()));
 
         authUserRepository.insert(user);
+
+        // 根据角色创建详细信息
+        if ("teacher".equals(request.getRole())) {
+            // 创建教师记录
+            Teacher teacher = new Teacher();
+            teacher.setTeacherId(user.getUserId());
+            teacher.setName(request.getName());
+            teacher.setTitle(request.getTitle());
+            teacher.setDepartment(request.getDepartment());
+            usersUserRepository.insertTeacher(teacher);
+        } else if ("student".equals(request.getRole())) {
+            // 创建学生记录
+            Student student = new Student();
+            student.setStudentId(user.getUserId());
+            student.setName(request.getName());
+            student.setStudentNumber(request.getStudentNumber());
+            student.setMajor(request.getMajor());
+            student.setGrade(request.getGrade());
+            student.setClazz(request.getClazz());
+            usersUserRepository.insertStudent(student);
+        }
 
         // 生成JWT令牌
         String token = jwtService.generateToken(user.getUserId(), user.getRole());
