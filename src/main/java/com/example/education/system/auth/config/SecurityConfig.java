@@ -41,6 +41,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers("/auth/**").permitAll()
                 .requestMatchers("/users/profile").authenticated()
+                .requestMatchers("/users/*/password").authenticated()
                 .requestMatchers("/users/**").hasRole("admin")
                 .requestMatchers("/courses/**").hasRole("admin")
                 .requestMatchers("/course-schedules/**").hasRole("admin")

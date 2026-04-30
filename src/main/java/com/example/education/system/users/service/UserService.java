@@ -63,6 +63,20 @@ public class UserService {
         }
     }
 
+    public User findByPhone(String phone) {
+        if (phone == null || phone.isEmpty()) {
+            return null;
+        }
+        return userRepository.findByPhone(phone);
+    }
+
+    public User findByEmail(String email) {
+        if (email == null || email.isEmpty()) {
+            return null;
+        }
+        return userRepository.findByEmail(email);
+    }
+
     public ProfileResponse getProfile(Integer userId) {
         User user = userRepository.findUserById(userId);
         if (user == null) {
@@ -109,15 +123,35 @@ public class UserService {
     }
 
     public void updateProfile(Integer userId, ProfileResponse.Data profileData) {
-        // 更新用户基本信息
         User user = userRepository.findUserById(userId);
         if (user != null) {
+            // 检查手机号是否被其他用户使用（排除自己）
+            if (profileData.getPhone() != null && !profileData.getPhone().isEmpty()) {
+                // 只有当手机号真正改变时才检查
+                if (!profileData.getPhone().equals(user.getPhone())) {
+                    User existingUser = userRepository.findByPhone(profileData.getPhone());
+                    if (existingUser != null) {
+                        throw new RuntimeException("该手机号已被使用");
+                    }
+                }
+            }
+            
+            // 检查邮箱是否被其他用户使用（排除自己）
+            if (profileData.getEmail() != null && !profileData.getEmail().isEmpty()) {
+                // 只有当邮箱真正改变时才检查
+                if (!profileData.getEmail().equals(user.getEmail())) {
+                    User existingUser = userRepository.findByEmail(profileData.getEmail());
+                    if (existingUser != null) {
+                        throw new RuntimeException("该邮箱已被使用");
+                    }
+                }
+            }
+            
             user.setEmail(profileData.getEmail());
             user.setPhone(profileData.getPhone());
             user.setAvatarId(profileData.getAvatarId());
             userRepository.updateUser(user);
 
-            // 根据用户角色更新详细信息
             if ("teacher".equals(user.getRole())) {
                 Teacher teacher = userRepository.findTeacherById(userId);
                 if (teacher != null) {
@@ -127,7 +161,6 @@ public class UserService {
                     teacher.setBio(profileData.getBio());
                     userRepository.updateTeacher(teacher);
                 } else {
-                    // 如果教师信息不存在，创建新的教师记录
                     Teacher newTeacher = new Teacher();
                     newTeacher.setTeacherId(userId);
                     newTeacher.setName(profileData.getName());
@@ -146,7 +179,6 @@ public class UserService {
                     student.setClazz(profileData.getClazz());
                     userRepository.updateStudent(student);
                 } else {
-                    // 如果学生信息不存在，创建新的学生记录
                     Student newStudent = new Student();
                     newStudent.setStudentId(userId);
                     newStudent.setName(profileData.getName());

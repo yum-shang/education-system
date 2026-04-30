@@ -23,6 +23,14 @@
         SELECT * FROM users WHERE user_id = #{userId}
     </select>
 
+    <select id="findByPhone" resultType="com.example.education.system.auth.model.User">
+        SELECT * FROM users WHERE phone = #{phone}
+    </select>
+
+    <select id="findByEmail" resultType="com.example.education.system.auth.model.User">
+        SELECT * FROM users WHERE email = #{email}
+    </select>
+
     <update id="updateUser" parameterType="com.example.education.system.auth.model.User">
         UPDATE users SET
         email = #{email},

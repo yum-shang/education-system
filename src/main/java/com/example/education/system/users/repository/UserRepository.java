@@ -16,6 +16,8 @@ public interface UserRepository {
     List<User> findUsers(@Param("role") String role, @Param("offset") Integer offset, @Param("limit") Integer limit);
     Integer countUsers(@Param("role") String role);
     User findUserById(@Param("userId") Integer userId);
+    User findByPhone(@Param("phone") String phone);
+    User findByEmail(@Param("email") String email);
     void updateUser(User user);
 
     // 教师相关操作
