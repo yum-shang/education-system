@@ -15,5 +15,7 @@ public interface ResearchRepository {
 
     void insertApplication(ProjectApplication application);
     void updateApplicationStatus(@Param("applicationId") Integer applicationId, @Param("status") String status, @Param("reviewTime") java.sql.Timestamp reviewTime);
+    //修改项目状态
+    void updateProjectStatus(@Param("projectId") Integer projectId, @Param("status") String status, @Param("createdAt") java.sql.Timestamp createdAt);
     List<ProjectApplication> findApplications(@Param("projectId") Integer projectId, @Param("status") String status, @Param("offset") Integer offset, @Param("limit") Integer limit);
 }

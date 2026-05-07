@@ -3,6 +3,7 @@ package com.example.education.system.grades.controller;
 import com.example.education.system.grades.dto.CreateGradeRequest;
 import com.example.education.system.grades.dto.GradeListResponse;
 import com.example.education.system.grades.service.GradeService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,10 +15,23 @@ public class GradeController {
     private GradeService gradeService;
 
     @PostMapping
-    public GradeListResponse createGrade(@RequestBody CreateGradeRequest request) {
-        // 从JWT中获取教师ID
-        Integer teacherId = 1; // 简化处理
+    public GradeListResponse createGrade(@RequestBody CreateGradeRequest request, HttpServletRequest httpRequest) {
+        Integer teacherId = getCurrentTeacherId(httpRequest);
+        if (teacherId == null) {
+            GradeListResponse response = new GradeListResponse();
+            response.setCode(401);
+            response.setMessage("未登录或登录已过期");
+            return response;
+        }
         return gradeService.createGrade(request, teacherId);
+    }
+
+    private Integer getCurrentTeacherId(HttpServletRequest request) {
+        Object userId = request.getAttribute("userId");
+        if (userId != null) {
+            return (Integer) userId;
+        }
+        return null;
     }
 
     @PutMapping("/{gradeId}")
@@ -66,9 +80,23 @@ class StudentGradeController {
             @RequestParam(required = false) String semester,
             @RequestParam(required = false) Integer year,
             @RequestParam Integer page,
-            @RequestParam Integer pageSize) {
-        // 从JWT中获取学生ID
-        Integer studentId = 1; // 简化处理
+            @RequestParam Integer pageSize,
+            HttpServletRequest request) {
+        Integer studentId = getCurrentStudentId(request);
+        if (studentId == null) {
+            GradeListResponse response = new GradeListResponse();
+            response.setCode(401);
+            response.setMessage("未登录或登录已过期");
+            return response;
+        }
         return gradeService.getStudentGrades(studentId, semester, year, page, pageSize);
+    }
+
+    private Integer getCurrentStudentId(HttpServletRequest request) {
+        Object userId = request.getAttribute("userId");
+        if (userId != null) {
+            return (Integer) userId;
+        }
+        return null;
     }
 }

@@ -34,6 +34,13 @@
         WHERE application_id = #{applicationId}
     </update>
 
+    <update id="updateProjectStatus">
+        UPDATE research_projects SET
+        status = #{status},
+        created_at = #{createdAt}
+        WHERE project_id = #{projectId}
+    </update>
+
     <select id="findApplications" resultType="com.example.education.system.research.model.ProjectApplication">
         SELECT * FROM project_applications
         WHERE 1=1

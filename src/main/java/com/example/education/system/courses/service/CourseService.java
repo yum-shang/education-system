@@ -118,8 +118,33 @@ public class CourseService {
         response.setMessage("获取成功");
 
         CourseListResponse.Data data = new CourseListResponse.Data();
-        data.setList(new ArrayList<>());
-        data.setTotal(0);
+        List<CourseListResponse.ScheduleInfo> scheduleInfos = new ArrayList<>();
+
+        for (CourseSchedule schedule : schedules) {
+            CourseListResponse.ScheduleInfo info = new CourseListResponse.ScheduleInfo();
+            info.setScheduleId(schedule.getScheduleId());
+            info.setCourseId(schedule.getCourseId());
+            info.setTeacherId(schedule.getTeacherId());
+            info.setClassroom(schedule.getClassroom());
+            info.setDayOfWeek(schedule.getDayOfWeek());
+            info.setStartTime(schedule.getStartTime());
+            info.setEndTime(schedule.getEndTime());
+            info.setSemester(schedule.getSemester());
+            info.setYear(schedule.getYear());
+            
+            if (schedule.getCourseId() != null) {
+                Course course = courseRepository.findCourseById(schedule.getCourseId());
+                if (course != null) {
+                    info.setCourseName(course.getCourseName());
+                    info.setCourseCode(course.getCourseCode());
+                }
+            }
+            
+            scheduleInfos.add(info);
+        }
+
+        data.setList(scheduleInfos);
+        data.setTotal(scheduleInfos.size());
         data.setPage(page);
         data.setPageSize(pageSize);
 

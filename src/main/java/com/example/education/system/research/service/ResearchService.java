@@ -133,4 +133,27 @@ public class ResearchService {
         response.setData(data);
         return response;
     }
+
+    @Transactional
+    public ProjectListResponse updateProject(Integer projectId, String status) {
+        if (projectId == null) {
+            throw new IllegalArgumentException("项目ID不能为空");
+        }
+        
+        if (status == null || status.isEmpty()) {
+            throw new IllegalArgumentException("状态不能为空");
+        }
+        
+        ResearchProject project = researchRepository.findProjectById(projectId);
+        if (project == null) {
+            throw new IllegalArgumentException("项目不存在");
+        }
+        
+        researchRepository.updateProjectStatus(projectId, status, new Timestamp(new Date().getTime()));
+        
+        ProjectListResponse response = new ProjectListResponse();
+        response.setCode(200);
+        response.setMessage("项目状态更新成功");
+        return response;
+    }
 }

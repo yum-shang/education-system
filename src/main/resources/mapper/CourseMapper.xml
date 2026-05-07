@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.education.system.courses.repository.CourseRepository">
-    <insert id="insertCourse" parameterType="com.example.education.system.courses.model.Course">
+    <insert id="insertCourse" parameterType="com.example.education.system.courses.model.Course" useGeneratedKeys="true" keyProperty="courseId">
         INSERT INTO courses (course_name, credit, course_code, description)
         VALUES (#{courseName}, #{credit}, #{courseCode}, #{description})
     </insert>
@@ -35,7 +35,7 @@
         DELETE FROM courses WHERE course_id = #{courseId}
     </delete>
 
-    <insert id="insertSchedule" parameterType="com.example.education.system.courses.model.CourseSchedule">
+    <insert id="insertSchedule" parameterType="com.example.education.system.courses.model.CourseSchedule" useGeneratedKeys="true" keyProperty="scheduleId">
         INSERT INTO course_schedules (course_id, teacher_id, classroom, day_of_week, start_time, end_time, semester, year)
         VALUES (#{courseId}, #{teacherId}, #{classroom}, #{dayOfWeek}, #{startTime}, #{endTime}, #{semester}, #{year})
     </insert>
@@ -56,5 +56,17 @@
             AND year = #{year}
         </if>
         LIMIT #{limit} OFFSET #{offset}
+    </select>
+    <select id="findScheduleById" resultType="com.example.education.system.courses.model.CourseSchedule">
+        SELECT * FROM course_schedules WHERE schedule_id = #{scheduleId} LIMIT 1
+    </select>
+    <select id="findScheduleByTeacherAndTime" resultType="com.example.education.system.courses.model.CourseSchedule">
+        SELECT * FROM course_schedules
+        WHERE teacher_id = #{teacherId}
+        AND day_of_week = #{dayOfWeek}
+        AND start_time = #{startTime}
+        AND semester = #{semester}
+        AND year = #{year}
+        LIMIT 1
     </select>
 </mapper>

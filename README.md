@@ -24,13 +24,14 @@ education-system/
 │   │   ├── java/com/example/education/system/  # 源代码目录
 │   │   │   ├── auth/          # 认证模块
 │   │   │   ├── users/         # 用户管理模块
-│   │   │   ├── courses/       # 课程管理模块
+│   │   │   ├── courses/       # 课程管理模块（含选课）
 │   │   │   ├── grades/        # 成绩管理模块
 │   │   │   ├── research/      # 科研项目模块
 │   │   │   ├── innovation/     # 大创赛组队模块
 │   │   │   ├── images/        # 图片管理模块
 │   │   │   ├── reports/       # 报表统计模块
 │   │   │   ├── search/        # 查询检索模块
+│   │   │   ├── schedule/      # 排课模块
 │   │   │   └── EducationSystemApplication.java  # 应用主类
 │   │   └── resources/         # 资源文件目录
 │   │       ├── application.properties  # 应用配置文件
@@ -110,8 +111,23 @@ java -jar target/education-system-0.0.1-SNAPSHOT.jar
 | 获取课程列表 | GET | /api/courses | 获取课程列表 | 管理员 |
 | 修改课程 | PUT | /api/courses/{course_id} | 修改课程信息 | 管理员 |
 | 删除课程 | DELETE | /api/courses/{course_id} | 删除课程 | 管理员 |
-| 创建排课 | POST | /api/course-schedules | 创建排课信息 | 管理员 |
-| 获取排课列表 | GET | /api/course-schedules | 获取排课列表 | 管理员 |
+
+### 排课模块
+
+| 接口名称 | 请求方法 | 请求路径 | 说明 | 权限 |
+|---------|---------|---------|------|------|
+| 自动排课 | POST | /api/schedule/auto | 根据课程自动分配教室和时间 | 管理员 |
+| 获取教室列表 | GET | /api/schedule/classrooms | 获取所有教室列表 | 公开 |
+| 根据ID获取教室 | GET | /api/schedule/classrooms/{id} | 根据ID获取教室详情 | 公开 |
+
+### 选课模块
+
+| 接口名称 | 请求方法 | 请求路径 | 说明 | 权限 |
+|---------|---------|---------|------|------|
+| 学生选课 | POST | /api/course-enrollments | 学生选择课程 | 学生 |
+| 学生退课 | PUT | /api/course-enrollments/{enrollmentId}/drop | 学生取消选课 | 学生 |
+| 获取我的选课 | GET | /api/course-enrollments/my | 获取当前学生的选课列表 | 学生 |
+| 获取课程选课学生 | GET | /api/course-enrollments/schedule/{scheduleId} | 获取课程的选课学生列表 | 教师/管理员 |
 
 ### 成绩管理模块
 
@@ -244,48 +260,319 @@ java -jar target/education-system-0.0.1-SNAPSHOT.jar
 
 **管理员登录**：
 - 请求体：`{"username":"admin","password":"admin123","verification_code":"123456"}`
-- 响应：`{"code":200,"message":"登录成功","data":{"userId":1,"username":"admin","role":"admin","token":"..."}}`
+- 响应：`{"code":200,"message":"登录成功","data":{"userId":1,"username":"admin","role":"admin","token":"eyJhbGciOiJIUzI1NiJ9..."}}`
 
 **教师登录**：
 - 请求体：`{"username":"teacher1","password":"teacher123","verification_code":"123456"}`
-- 响应：`{"code":200,"message":"登录成功","data":{"userId":2,"username":"teacher1","role":"teacher","token":"..."}}`
+- 响应：`{"code":200,"message":"登录成功","data":{"userId":2,"username":"teacher1","role":"teacher","token":"eyJhbGciOiJIUzI1NiJ9..."}}`
 
 **学生登录**：
 - 请求体：`{"username":"student1","password":"student123","verification_code":"123456"}`
-- 响应：`{"code":200,"message":"登录成功","data":{"userId":3,"username":"student1","role":"student","token":"..."}}`
+- 响应：`{"code":200,"message":"登录成功","data":{"userId":3,"username":"student1","role":"student","token":"eyJhbGciOiJIUzI1NiJ9..."}}`
 
 ### 用户管理模块测试数据
 
 **管理员获取用户列表**：
 - URL：`GET /api/users?page=1&pageSize=10`
-- 响应：`{"code":200,"message":"获取成功","data":{"list":[{"userId":1,"username":"admin","role":"admin"}],"total":3,"page":1,"pageSize":10}}`
+- 请求头：`Authorization: Bearer {admin_token}`
+- 响应：
+```json
+{
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "list": [
+      {"userId": 1, "username": "admin", "role": "admin"},
+      {"userId": 2, "username": "teacher1", "role": "teacher"},
+      {"userId": 3, "username": "student1", "role": "student"}
+    ],
+    "total": 3,
+    "page": 1,
+    "pageSize": 10
+  }
+}
+```
 
 **管理员获取指定用户信息**：
 - URL：`GET /api/users/2`
-- 响应：`{"code":200,"message":"获取成功","data":{"userId":2,"username":"teacher1","role":"teacher","teacher":{"teacherId":2,"name":"张老师","title":"讲师","department":"计算机科学与技术"}}}`
+- 请求头：`Authorization: Bearer {admin_token}`
+- 响应：
+```json
+{
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "userId": 2,
+    "username": "teacher1",
+    "email": "teacher1@example.com",
+    "phone": "13800138001",
+    "role": "teacher",
+    "teacher": {
+      "teacherId": 2,
+      "name": "张老师",
+      "title": "讲师",
+      "department": "计算机科学与技术"
+    }
+  }
+}
+```
 
 **教师修改自己密码**：
-- URL：`PUT /api/users/2/password?newPassword=teacher456`
+- URL：`PUT /api/users/2/password`
+- 请求头：`Authorization: Bearer {teacher_token}`
+- 请求体：`{"newPassword":"teacher456"}`
 - 响应：`{"code":200,"message":"密码修改成功","data":null}`
 
 **获取当前用户信息**：
 - URL：`GET /api/users/profile`
-- 响应：`{"code":200,"message":"获取成功","data":{"userId":2,"username":"teacher1","role":"teacher","teacher":{...}}}`
+- 请求头：`Authorization: Bearer {token}`
+- 响应：
+```json
+{
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "userId": 2,
+    "username": "teacher1",
+    "role": "teacher",
+    "teacher": {...}
+  }
+}
+```
 
 **修改个人信息**：
 - URL：`PUT /api/users/profile`
+- 请求头：`Authorization: Bearer {token}`
 - 请求体：
-  ```json
-  {
-    "email": "teacher1_new@example.com",
-    "phone": "13800138004",
-    "name": "张教授",
-    "title": "副教授",
-    "department": "计算机科学与技术学院",
-    "bio": "主要研究方向为人工智能"
-  }
-  ```
+```json
+{
+  "email": "teacher1_new@example.com",
+  "phone": "13800138004",
+  "name": "张教授",
+  "title": "副教授",
+  "department": "计算机科学与技术学院",
+  "bio": "主要研究方向为人工智能"
+}
+```
 - 响应：`{"code":200,"message":"信息修改成功","data":null}`
+
+### 排课模块测试数据
+
+**自动排课**：
+- URL：`POST /api/schedule/auto`
+- 请求头：`Authorization: Bearer {admin_token}`
+- 请求体：
+```json
+{
+  "semester": "2023-2024-1",
+  "year": 2023,
+  "courseId": 1,
+  "teacherId": 2
+}
+```
+- 响应：
+```json
+{
+  "code": 200,
+  "message": "排课成功",
+  "data": {
+    "scheduleId": 1,
+    "courseId": 1,
+    "courseName": "数据结构",
+    "teacherId": 2,
+    "teacherName": "张老师",
+    "classroomName": "101教室",
+    "dayOfWeek": 3,
+    "timeSlot": 4,
+    "startTime": "11:00",
+    "endTime": "12:00",
+    "semester": "2023-2024-1",
+    "year": 2023
+  }
+}
+```
+
+**获取教室列表**：
+- URL：`GET /api/schedule/classrooms`
+- 响应：
+```json
+{
+  "code": 200,
+  "message": "获取成功",
+  "data": [
+    {"classroomId": 1, "classroomName": "101教室", "capacity": 30},
+    {"classroomId": 2, "classroomName": "102教室", "capacity": 50}
+  ]
+}
+```
+
+### 选课模块测试数据
+
+**学生选课**：
+- URL：`POST /api/course-enrollments`
+- 请求头：`Authorization: Bearer {student_token}`
+- 请求体：`{"scheduleId": 1}`
+- 响应：
+```json
+{
+  "code": 200,
+  "message": "选课成功",
+  "data": [
+    {
+      "enrollmentId": 1,
+      "studentId": 3,
+      "scheduleId": 1,
+      "enrollTime": "2026-05-04T10:30:00",
+      "status": "enrolled"
+    }
+  ]
+}
+```
+
+**学生退课**：
+- URL：`PUT /api/course-enrollments/1/drop`
+- 请求头：`Authorization: Bearer {student_token}`
+- 响应：`{"code":200,"message":"退课成功","data":null}`
+
+**获取我的选课列表**：
+- URL：`GET /api/course-enrollments/my?semester=2023-2024-1&year=2023&page=1&pageSize=10`
+- 请求头：`Authorization: Bearer {student_token}`
+- 响应：
+```json
+{
+  "code": 200,
+  "message": "查询成功",
+  "data": [
+    {
+      "enrollmentId": 1,
+      "studentId": 3,
+      "scheduleId": 1,
+      "enrollTime": "2026-05-04T10:30:00",
+      "status": "enrolled"
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "pageSize": 10
+}
+```
+
+**获取课程选课学生列表**：
+- URL：`GET /api/course-enrollments/schedule/1?page=1&pageSize=10`
+- 请求头：`Authorization: Bearer {teacher_token}`
+- 响应：
+```json
+{
+  "code": 200,
+  "message": "查询成功",
+  "data": [
+    {
+      "enrollmentId": 1,
+      "studentId": 3,
+      "scheduleId": 1,
+      "enrollTime": "2026-05-04T10:30:00",
+      "status": "enrolled"
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "pageSize": 10
+}
+```
+
+### 成绩模块测试数据
+
+**录入成绩**：
+- URL：`POST /api/grades`
+- 请求头：`Authorization: Bearer {teacher_token}`
+- 请求体：
+```json
+{
+  "enrollmentId": 1,
+  "score": 88.5,
+  "comment": "表现优秀"
+}
+```
+- 响应：
+```json
+{
+  "code": 200,
+  "message": "成绩录入成功",
+  "data": {
+    "gradeId": 1,
+    "enrollmentId": 1,
+    "score": 88.5,
+    "gradeLevel": "good",
+    "teacherId": 2,
+    "comment": "表现优秀"
+  }
+}
+```
+
+**修改成绩**：
+- URL：`PUT /api/grades/1`
+- 请求头：`Authorization: Bearer {teacher_token}`
+- 请求体：
+```json
+{
+  "score": 92.5,
+  "gradeLevel": "excellent",
+  "comment": "表现优秀，继续努力"
+}
+```
+- 响应：`{"code":200,"message":"成绩修改成功","data":null}`
+
+**教师获取课程成绩**：
+- URL：`GET /api/teacher/grades?scheduleId=1&page=1&pageSize=10`
+- 请求头：`Authorization: Bearer {teacher_token}`
+- 响应：
+```json
+{
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "list": [
+      {
+        "gradeId": 1,
+        "enrollmentId": 1,
+        "studentId": 3,
+        "studentName": "李同学",
+        "score": 92.5,
+        "gradeLevel": "excellent"
+      }
+    ],
+    "total": 1,
+    "page": 1,
+    "pageSize": 10
+  }
+}
+```
+
+**学生获取个人成绩**：
+- URL：`GET /api/student/grades?semester=2023-2024-1&year=2023&page=1&pageSize=10`
+- 请求头：`Authorization: Bearer {student_token}`
+- 响应：
+```json
+{
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "list": [
+      {
+        "gradeId": 1,
+        "courseName": "数据结构",
+        "score": 92.5,
+        "gradeLevel": "excellent",
+        "semester": "2023-2024-1",
+        "year": 2023
+      }
+    ],
+    "total": 1,
+    "page": 1,
+    "pageSize": 10
+  }
+}
+```
 
 ## 注意事项
 

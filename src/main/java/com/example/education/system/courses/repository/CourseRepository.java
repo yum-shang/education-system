@@ -17,4 +17,9 @@ public interface CourseRepository {
 
     void insertSchedule(CourseSchedule schedule);
     List<CourseSchedule> findSchedules(@Param("courseId") Integer courseId, @Param("teacherId") Integer teacherId, @Param("semester") String semester, @Param("year") Integer year, @Param("offset") Integer offset, @Param("limit") Integer limit);
+    CourseSchedule findScheduleById(@Param("scheduleId") Integer scheduleId);
+    
+    CourseSchedule findScheduleByTeacherAndTime(@Param("teacherId") Integer teacherId, @Param("dayOfWeek") Integer dayOfWeek, 
+                                                 @Param("startTime") String startTime, @Param("semester") String semester, 
+                                                 @Param("year") Integer year);
 }

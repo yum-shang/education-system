@@ -21,6 +21,10 @@ public class GradeService {
 
     @Transactional
     public GradeListResponse createGrade(CreateGradeRequest request, Integer teacherId) {
+        if (teacherId == null) {
+            throw new IllegalArgumentException("教师ID不能为空");
+        }
+
         Grade grade = new Grade();
         grade.setEnrollmentId(request.getEnrollmentId());
         grade.setScore(request.getScore());

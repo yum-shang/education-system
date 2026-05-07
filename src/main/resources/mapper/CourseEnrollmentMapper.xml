@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.education.system.courses.repository.CourseEnrollmentRepository">
+    <insert id="insertEnrollment" parameterType="com.example.education.system.courses.model.CourseEnrollment" useGeneratedKeys="true" keyProperty="enrollmentId">
+        INSERT INTO course_enrollments (student_id, schedule_id, enroll_time, status)
+        VALUES (#{studentId}, #{scheduleId}, #{enrollTime}, #{status})
+    </insert>
+    
+    <update id="updateEnrollmentStatus">
+        UPDATE course_enrollments SET status = #{status} WHERE enrollment_id = #{enrollmentId}
+    </update>
+    
+    <select id="findEnrollmentsByStudentId" resultType="com.example.education.system.courses.model.CourseEnrollment">
+        SELECT * FROM course_enrollments
+        WHERE student_id = #{studentId}
+        <if test="semester != null and semester != ''">
+            AND EXISTS (SELECT 1 FROM course_schedules WHERE schedule_id = course_enrollments.schedule_id AND semester = #{semester})
+        </if>
+        <if test="year != null">
+            AND EXISTS (SELECT 1 FROM course_schedules WHERE schedule_id = course_enrollments.schedule_id AND year = #{year})
+        </if>
+        ORDER BY enroll_time DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+    
+    <select id="countEnrollmentsByStudentId" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM course_enrollments
+        WHERE student_id = #{studentId}
+        <if test="semester != null and semester != ''">
+            AND EXISTS (SELECT 1 FROM course_schedules WHERE schedule_id = course_enrollments.schedule_id AND semester = #{semester})
+        </if>
+        <if test="year != null">
+            AND EXISTS (SELECT 1 FROM course_schedules WHERE schedule_id = course_enrollments.schedule_id AND year = #{year})
+        </if>
+    </select>
+    
+    <select id="findEnrollmentsByScheduleId" resultType="com.example.education.system.courses.model.CourseEnrollment">
+        SELECT * FROM course_enrollments
+        WHERE schedule_id = #{scheduleId}
+        ORDER BY enroll_time DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+    
+    <select id="countEnrollmentsByScheduleId" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM course_enrollments WHERE schedule_id = #{scheduleId}
+    </select>
+    
+    <select id="findEnrollmentByStudentAndSchedule" resultType="com.example.education.system.courses.model.CourseEnrollment">
+        SELECT * FROM course_enrollments WHERE student_id = #{studentId} AND schedule_id = #{scheduleId} LIMIT 1
+    </select>
+</mapper>

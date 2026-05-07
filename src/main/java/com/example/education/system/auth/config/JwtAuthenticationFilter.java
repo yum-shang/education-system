@@ -29,6 +29,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
+        String path = request.getRequestURI();
+        
+        if (path.startsWith("/api/auth/") || path.startsWith("/api/schedule/")) {
+            chain.doFilter(request, response);
+            return;
+        }
+        
         String header = request.getHeader("Authorization");
         String token = null;
         Integer userId = null;
@@ -39,14 +46,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             try {
                 userId = jwtService.getUserIdFromToken(token);
                 role = jwtService.getRoleFromToken(token);
+                
+                request.setAttribute("userId", userId);
+                request.setAttribute("role", role);
+                
+                logger.debug("JWT解析成功 - userId: {}, role: {}", userId, role);
             } catch (Exception e) {
                 logger.error("Invalid JWT token: {}", e.getMessage());
             }
         }
 
         if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            // 这里可以根据userId从数据库获取用户信息
-            // 简化处理，直接创建一个UserDetails对象
             UserDetails userDetails = org.springframework.security.core.userdetails.User
                     .withUsername(userId.toString())
                     .password("password")

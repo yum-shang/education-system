@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.education.system.classroom.repository.ClassroomRepository">
+    <select id="findAll" resultType="com.example.education.system.classroom.model.Classroom">
+        SELECT * FROM classrooms
+    </select>
+    
+    <select id="findById" resultType="com.example.education.system.classroom.model.Classroom">
+        SELECT * FROM classrooms WHERE classroom_id = #{classroomId}
+    </select>
+    
+    <select id="findByName" resultType="com.example.education.system.classroom.model.Classroom">
+        SELECT * FROM classrooms WHERE classroom_name = #{classroomName}
+    </select>
+    
+    <update id="updateTimeSlot">
+        UPDATE classrooms
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="timeSlot == 1">time_slot_1 = #{status},</if>
+            <if test="timeSlot == 2">time_slot_2 = #{status},</if>
+            <if test="timeSlot == 3">time_slot_3 = #{status},</if>
+            <if test="timeSlot == 4">time_slot_4 = #{status},</if>
+            <if test="timeSlot == 5">time_slot_5 = #{status},</if>
+            <if test="timeSlot == 6">time_slot_6 = #{status},</if>
+            <if test="timeSlot == 7">time_slot_7 = #{status},</if>
+            <if test="timeSlot == 8">time_slot_8 = #{status},</if>
+            <if test="timeSlot == 9">time_slot_9 = #{status},</if>
+        </trim>
+        WHERE classroom_id = #{classroomId}
+    </update>
+    
+    <select id="findAvailableByTimeSlot" resultType="com.example.education.system.classroom.model.Classroom">
+        SELECT * FROM classrooms
+        <where>
+            <if test="timeSlot == 1">time_slot_1 = 0</if>
+            <if test="timeSlot == 2">time_slot_2 = 0</if>
+            <if test="timeSlot == 3">time_slot_3 = 0</if>
+            <if test="timeSlot == 4">time_slot_4 = 0</if>
+            <if test="timeSlot == 5">time_slot_5 = 0</if>
+            <if test="timeSlot == 6">time_slot_6 = 0</if>
+            <if test="timeSlot == 7">time_slot_7 = 0</if>
+            <if test="timeSlot == 8">time_slot_8 = 0</if>
+            <if test="timeSlot == 9">time_slot_9 = 0</if>
+        </where>
+    </select>
+</mapper>

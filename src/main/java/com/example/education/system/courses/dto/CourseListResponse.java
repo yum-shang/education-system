@@ -11,7 +11,7 @@ public class CourseListResponse {
 
     @lombok.Data
     public static class Data {
-        private List<CourseInfo> list;
+        private List<?> list;
         private Integer total;
         private Integer page;
         private Integer pageSize;
@@ -24,5 +24,20 @@ public class CourseListResponse {
         private Double credit;
         private String courseCode;
         private String description;
+    }
+
+    @lombok.Data
+    public static class ScheduleInfo {
+        private Integer scheduleId;
+        private Integer courseId;
+        private String courseName;
+        private String courseCode;
+        private Integer teacherId;
+        private String classroom;
+        private Integer dayOfWeek;
+        private String startTime;
+        private String endTime;
+        private String semester;
+        private Integer year;
     }
 }
