@@ -49,4 +49,10 @@
         </if>
         LIMIT #{limit} OFFSET #{offset}
     </select>
+
+    <select id="findTeamApplicationByTeamAndStudent" resultType="com.example.education.system.innovation.model.TeamApplication">
+        SELECT * FROM team_applications
+        WHERE team_id = #{teamId} AND student_id = #{studentId}
+        ORDER BY apply_time DESC LIMIT 1
+    </select>
 </mapper>

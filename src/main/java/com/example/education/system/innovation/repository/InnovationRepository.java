@@ -18,4 +18,5 @@ public interface InnovationRepository {
     void insertTeamApplication(TeamApplication application);
     void updateTeamApplicationStatus(@Param("applicationId") Integer applicationId, @Param("status") String status, @Param("reviewTime") java.sql.Timestamp reviewTime);
     List<TeamApplication> findTeamApplications(@Param("teamId") Integer teamId, @Param("status") String status, @Param("offset") Integer offset, @Param("limit") Integer limit);
+    TeamApplication findTeamApplicationByTeamAndStudent(@Param("teamId") Integer teamId, @Param("studentId") Integer studentId);
 }

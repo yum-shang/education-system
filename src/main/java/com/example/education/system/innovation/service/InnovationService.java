@@ -123,6 +123,27 @@ public class InnovationService {
 
     @Transactional
     public TeamListResponse applyTeam(TeamApplicationRequest request, Integer studentId) {
+        TeamListResponse response = new TeamListResponse();
+
+        TeamApplication existing = innovationRepository.findTeamApplicationByTeamAndStudent(request.getTeamId(), studentId);
+        if (existing != null) {
+            if ("pending".equals(existing.getStatus())) {
+                response.setCode(400);
+                response.setMessage("你已向该队伍提交过申请，请等待审核");
+                return response;
+            }
+            if ("approved".equals(existing.getStatus())) {
+                response.setCode(400);
+                response.setMessage("你已经是该队伍的成员，无需重复申请");
+                return response;
+            }
+            if ("rejected".equals(existing.getStatus())) {
+                response.setCode(400);
+                response.setMessage("你的申请已被拒绝，无法重复申请");
+                return response;
+            }
+        }
+
         TeamApplication application = new TeamApplication();
         application.setTeamId(request.getTeamId());
         application.setStudentId(studentId);
@@ -132,7 +153,6 @@ public class InnovationService {
 
         innovationRepository.insertTeamApplication(application);
 
-        TeamListResponse response = new TeamListResponse();
         response.setCode(200);
         response.setMessage("申请成功");
 
