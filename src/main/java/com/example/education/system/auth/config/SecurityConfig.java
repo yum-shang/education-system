@@ -56,7 +56,7 @@ public class SecurityConfig {
                 .requestMatchers("/grades/**").hasAnyRole("teacher", "admin")
                 .requestMatchers("/research-projects").hasAnyRole("teacher", "student", "admin")
                 .requestMatchers("/research-projects/**").hasAnyRole("teacher", "admin")
-                .requestMatchers("/project-applications").hasAnyRole("student", "admin")
+                .requestMatchers("/project-applications").hasAnyRole("teacher", "admin")
                 .requestMatchers("/project-applications/**").hasAnyRole("teacher", "admin")
                 .requestMatchers("/innovation-teams").hasAnyRole("student", "admin")
                 .requestMatchers("/innovation-teams/**").hasAnyRole("student", "admin")
