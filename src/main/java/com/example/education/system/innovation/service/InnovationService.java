@@ -15,6 +15,17 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * 大创赛组队服务
+ * 
+ * 负责大学生创新创业大赛的组队管理，包括：
+ * - 创建参赛队伍
+ * - 队伍招募状态管理
+ * - 学生申请加入队伍
+ * - 队长审核入队申请
+ * - 队伍列表查询
+ * - 入队申请列表查询
+ */
 @Service
 public class InnovationService {
 
@@ -23,6 +34,37 @@ public class InnovationService {
 
     @Transactional
     public TeamListResponse createTeam(CreateTeamRequest request, Integer leaderId) {
+        if (request.getTeamName() == null || request.getTeamName().trim().isEmpty()) {
+            TeamListResponse response = new TeamListResponse();
+            response.setCode(400);
+            response.setMessage("队伍名称不能为空");
+            
+            TeamListResponse.Data data = new TeamListResponse.Data();
+            data.setList(new ArrayList<>());
+            data.setTotal(0);
+            data.setPage(1);
+            data.setPageSize(10);
+            response.setData(data);
+            
+            return response;
+        }
+        
+        InnovationTeam existingTeam = innovationRepository.findTeamByName(request.getTeamName());
+        if (existingTeam != null) {
+            TeamListResponse response = new TeamListResponse();
+            response.setCode(409);
+            response.setMessage("队伍名称已存在，请使用其他名称");
+            
+            TeamListResponse.Data data = new TeamListResponse.Data();
+            data.setList(new ArrayList<>());
+            data.setTotal(0);
+            data.setPage(1);
+            data.setPageSize(10);
+            response.setData(data);
+            
+            return response;
+        }
+        
         InnovationTeam team = new InnovationTeam();
         team.setTeamName(request.getTeamName());
         team.setProjectName(request.getProjectName());
@@ -35,7 +77,7 @@ public class InnovationService {
 
         TeamListResponse response = new TeamListResponse();
         response.setCode(200);
-        response.setMessage("组队成功");
+        response.setMessage("队伍创建成功");
 
         TeamListResponse.Data data = new TeamListResponse.Data();
         data.setList(new ArrayList<>());

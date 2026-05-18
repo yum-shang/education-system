@@ -22,6 +22,10 @@
         SELECT * FROM innovation_teams WHERE team_id = #{teamId}
     </select>
 
+    <select id="findTeamByName" resultType="com.example.education.system.innovation.model.InnovationTeam">
+        SELECT * FROM innovation_teams WHERE team_name = #{teamName} LIMIT 1
+    </select>
+
     <insert id="insertTeamApplication" parameterType="com.example.education.system.innovation.model.TeamApplication">
         INSERT INTO team_applications (team_id, student_id, application_letter, status, apply_time)
         VALUES (#{teamId}, #{studentId}, #{applicationLetter}, #{status}, #{applyTime})

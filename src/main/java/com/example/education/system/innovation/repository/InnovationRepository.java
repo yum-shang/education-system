@@ -7,11 +7,13 @@ import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
+
 @Mapper
 public interface InnovationRepository {
     void insertTeam(InnovationTeam team);
     List<InnovationTeam> findTeams(@Param("status") String status, @Param("leaderId") Integer leaderId, @Param("offset") Integer offset, @Param("limit") Integer limit);
     InnovationTeam findTeamById(@Param("teamId") Integer teamId);
+    InnovationTeam findTeamByName(@Param("teamName") String teamName);
 
     void insertTeamApplication(TeamApplication application);
     void updateTeamApplicationStatus(@Param("applicationId") Integer applicationId, @Param("status") String status, @Param("reviewTime") java.sql.Timestamp reviewTime);

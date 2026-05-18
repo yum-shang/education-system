@@ -13,6 +13,16 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 用户管理服务
+ * 
+ * 负责用户信息的管理和查询，包括：
+ * - 用户列表查询（支持分页和角色筛选）
+ * - 用户密码修改
+ * - 用户资料获取和更新
+ * - 根据手机号/邮箱查询用户
+ * - 教师和学生详细信息管理
+ */
 @Service
 public class UserService {
 

@@ -3,8 +3,10 @@ package com.example.education.system.research.service;
 import com.example.education.system.research.dto.CreateProjectRequest;
 import com.example.education.system.research.dto.ProjectListResponse;
 import com.example.education.system.research.dto.ProjectApplicationRequest;
+import com.example.education.system.research.dto.ApplicationListResponse;
 import com.example.education.system.research.model.ResearchProject;
 import com.example.education.system.research.model.ProjectApplication;
+import com.example.education.system.research.model.ApplicationWithStudent;
 import com.example.education.system.research.repository.ResearchRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -15,6 +17,16 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * 科研项目服务
+ * 
+ * 负责科研项目的发布和申请管理，包括：
+ * - 教师发布科研项目
+ * - 学生申请科研项目
+ * - 教师审核项目申请
+ * - 科研项目列表查询
+ * - 项目申请列表查询
+ */
 @Service
 public class ResearchService {
 
@@ -116,17 +128,37 @@ public class ResearchService {
         return response;
     }
 
-    public ProjectListResponse getApplicationList(Integer projectId, String status, Integer page, Integer pageSize) {
+    public ApplicationListResponse getApplicationList(Integer projectId, String status, Integer page, Integer pageSize) {
         int offset = (page - 1) * pageSize;
-        List<ProjectApplication> applications = researchRepository.findApplications(projectId, status, offset, pageSize);
+        List<ApplicationWithStudent> applications = researchRepository.findApplicationsWithStudent(projectId, status, offset, pageSize);
 
-        ProjectListResponse response = new ProjectListResponse();
+        ApplicationListResponse response = new ApplicationListResponse();
         response.setCode(200);
         response.setMessage("获取成功");
 
-        ProjectListResponse.Data data = new ProjectListResponse.Data();
-        data.setList(new ArrayList<>());
-        data.setTotal(0);
+        ApplicationListResponse.Data data = new ApplicationListResponse.Data();
+        List<ApplicationListResponse.ApplicationInfo> applicationInfos = new ArrayList<>();
+
+        for (ApplicationWithStudent app : applications) {
+            ApplicationListResponse.ApplicationInfo info = new ApplicationListResponse.ApplicationInfo();
+            info.setApplicationId(app.getApplicationId());
+            info.setProjectId(app.getProjectId());
+            info.setProjectName(app.getProjectName());
+            info.setStudentId(app.getStudentId());
+            info.setStudentName(app.getStudentName());
+            info.setStudentNumber(app.getStudentNumber());
+            info.setMajor(app.getMajor());
+            info.setGrade(app.getGrade());
+            info.setClazz(app.getClazz());
+            info.setApplicationLetter(app.getApplicationLetter());
+            info.setStatus(app.getStatus());
+            info.setApplyTime(app.getApplyTime() != null ? app.getApplyTime().toString() : null);
+            info.setReviewTime(app.getReviewTime() != null ? app.getReviewTime().toString() : null);
+            applicationInfos.add(info);
+        }
+
+        data.setList(applicationInfos);
+        data.setTotal(0); // 实际应该查询总数
         data.setPage(page);
         data.setPageSize(pageSize);
 

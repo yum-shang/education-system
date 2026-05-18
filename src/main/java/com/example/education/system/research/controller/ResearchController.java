@@ -3,6 +3,7 @@ package com.example.education.system.research.controller;
 import com.example.education.system.research.dto.CreateProjectRequest;
 import com.example.education.system.research.dto.ProjectListResponse;
 import com.example.education.system.research.dto.ProjectApplicationRequest;
+import com.example.education.system.research.dto.ApplicationListResponse;
 import com.example.education.system.research.service.ResearchService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -101,11 +102,11 @@ class ProjectApplicationController {
     }
 
     @GetMapping
-    public ProjectListResponse getApplicationList(
+    public ApplicationListResponse getApplicationList(
             @RequestParam(required = false) Integer projectId,
             @RequestParam(required = false) String status,
             @RequestParam Integer page,
             @RequestParam Integer pageSize) {
-        return researchService.getApplicationList(projectId, status, page, pageSize);
+            return researchService.getApplicationList(projectId, status, page, pageSize);
     }
 }

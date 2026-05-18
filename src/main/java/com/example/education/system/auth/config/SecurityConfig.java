@@ -41,6 +41,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers("/auth/**").permitAll()
                 .requestMatchers("/schedule/**").permitAll()
+                .requestMatchers("/images/*/view").permitAll()
                 .requestMatchers("/users/profile").authenticated()
                 .requestMatchers("/users/*/password").authenticated()
                 .requestMatchers("/users/**").hasRole("admin")
@@ -61,7 +62,8 @@ public class SecurityConfig {
                 .requestMatchers("/innovation-teams/**").hasAnyRole("student", "admin")
                 .requestMatchers("/team-applications").hasAnyRole("student", "admin")
                 .requestMatchers("/team-applications/**").hasAnyRole("student", "admin")
-                .requestMatchers("/images/**").authenticated()
+                .requestMatchers("/images").authenticated()
+                .requestMatchers("/images/*").authenticated()
                 .requestMatchers("/reports/**").hasAnyRole("teacher", "admin")
                 .requestMatchers("/search/**").authenticated()
                 .anyRequest().authenticated()

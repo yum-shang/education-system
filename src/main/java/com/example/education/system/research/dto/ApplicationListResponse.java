@@ -4,32 +4,24 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class ProjectListResponse {
+public class ApplicationListResponse {
     private Integer code;
     private String message;
     private Data data;
 
     @lombok.Data
     public static class Data {
-        private List<ProjectInfo> list;
+        private List<ApplicationInfo> list;
         private Integer total;
         private Integer page;
         private Integer pageSize;
     }
 
     @lombok.Data
-    public static class ProjectInfo {
+    public static class ApplicationInfo {
+        private Integer applicationId;
         private Integer projectId;
         private String projectName;
-        private String description;
-        private Integer teacherId;
-        private String teacherName;
-        private String status;
-        private String startDate;
-        private String endDate;
-        private String createdAt;
-        
-        private Integer applicationId;
         private Integer studentId;
         private String studentName;
         private String studentNumber;
@@ -37,6 +29,7 @@ public class ProjectListResponse {
         private String grade;
         private String clazz;
         private String applicationLetter;
+        private String status;
         private String applyTime;
         private String reviewTime;
     }

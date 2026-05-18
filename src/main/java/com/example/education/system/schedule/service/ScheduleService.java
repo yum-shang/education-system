@@ -17,6 +17,15 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Random;
 
+/**
+ * 智能排课服务
+ * 
+ * 负责自动排课的核心业务逻辑，包括：
+ * - 智能自动排课（基于随机算法）
+ * - 教师时间冲突检测
+ * - 教室可用性检测
+ * - 排课结果生成
+ */
 @Service
 @Slf4j
 public class ScheduleService {

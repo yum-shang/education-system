@@ -15,6 +15,15 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * 课程选课服务
+ * 
+ * 负责学生选课和退课的业务逻辑，包括：
+ * - 学生选课（支持重复选课恢复）
+ * - 学生退课
+ * - 查询学生选课列表
+ * - 查询课程的选课学生列表
+ */
 @Service
 @Slf4j
 public class CourseEnrollmentService {

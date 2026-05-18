@@ -11,6 +11,15 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
+/**
+ * JWT令牌服务
+ * 
+ * 负责JWT令牌的生成、解析和验证，包括：
+ * - 生成用户登录令牌
+ * - 解析令牌获取用户信息
+ * - 验证令牌有效期
+ * - 从令牌中提取用户ID和角色
+ */
 @Service
 public class JwtService {
 

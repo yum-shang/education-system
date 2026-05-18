@@ -12,6 +12,15 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 课程管理服务
+ * 
+ * 负责课程和课程安排的管理，包括：
+ * - 课程创建、查询、更新、删除
+ * - 课程安排（排课）管理
+ * - 课程列表分页查询
+ * - 课程安排列表查询
+ */
 @Service
 public class CourseService {
 

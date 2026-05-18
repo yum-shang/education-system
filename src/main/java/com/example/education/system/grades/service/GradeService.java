@@ -13,6 +13,15 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * 成绩管理服务
+ * 
+ * 负责学生成绩的录入和查询，包括：
+ * - 教师录入学生成绩
+ * - 教师修改学生成绩
+ * - 教师查询课程成绩列表
+ * - 学生查询个人成绩列表
+ */
 @Service
 public class GradeService {
 

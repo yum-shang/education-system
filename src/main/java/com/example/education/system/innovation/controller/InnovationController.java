@@ -4,6 +4,7 @@ import com.example.education.system.innovation.dto.CreateTeamRequest;
 import com.example.education.system.innovation.dto.TeamListResponse;
 import com.example.education.system.innovation.dto.TeamApplicationRequest;
 import com.example.education.system.innovation.service.InnovationService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,9 +16,14 @@ public class InnovationController {
     private InnovationService innovationService;
 
     @PostMapping
-    public TeamListResponse createTeam(@RequestBody CreateTeamRequest request) {
-        // 从JWT中获取学生ID（队长）
-        Integer leaderId = 1; // 简化处理
+    public TeamListResponse createTeam(@RequestBody CreateTeamRequest request, HttpServletRequest httpRequest) {
+        Integer leaderId = getCurrentStudentId(httpRequest);
+        if (leaderId == null) {
+            TeamListResponse response = new TeamListResponse();
+            response.setCode(401);
+            response.setMessage("未登录或登录已过期");
+            return response;
+        }
         return innovationService.createTeam(request, leaderId);
     }
 
@@ -29,6 +35,14 @@ public class InnovationController {
             @RequestParam Integer pageSize) {
         return innovationService.getTeamList(status, leaderId, page, pageSize);
     }
+
+    private Integer getCurrentStudentId(HttpServletRequest request) {
+        Object userId = request.getAttribute("userId");
+        if (userId != null) {
+            return (Integer) userId;
+        }
+        return null;
+    }
 }
 
 @RestController
@@ -39,9 +53,14 @@ class TeamApplicationController {
     private InnovationService innovationService;
 
     @PostMapping
-    public TeamListResponse applyTeam(@RequestBody TeamApplicationRequest request) {
-        // 从JWT中获取学生ID
-        Integer studentId = 1; // 简化处理
+    public TeamListResponse applyTeam(@RequestBody TeamApplicationRequest request, HttpServletRequest httpRequest) {
+        Integer studentId = getCurrentStudentId(httpRequest);
+        if (studentId == null) {
+            TeamListResponse response = new TeamListResponse();
+            response.setCode(401);
+            response.setMessage("未登录或登录已过期");
+            return response;
+        }
         return innovationService.applyTeam(request, studentId);
     }
 
@@ -59,5 +78,13 @@ class TeamApplicationController {
             @RequestParam Integer page,
             @RequestParam Integer pageSize) {
         return innovationService.getTeamApplicationList(teamId, status, page, pageSize);
+    }
+
+    private Integer getCurrentStudentId(HttpServletRequest request) {
+        Object userId = request.getAttribute("userId");
+        if (userId != null) {
+            return (Integer) userId;
+        }
+        return null;
     }
 }

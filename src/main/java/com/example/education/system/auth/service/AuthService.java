@@ -17,6 +17,15 @@ import org.springframework.transaction.annotation.Transactional;
 import java.sql.Timestamp;
 import java.util.Date;
 
+/**
+ * 用户认证服务
+ * 
+ * 负责处理用户注册、登录等认证相关业务逻辑，包括：
+ * - 用户注册（教师/学生）
+ * - 用户登录验证
+ * - JWT令牌生成
+ * - 用户信息初始化
+ */
 @Service
 @Slf4j
 public class AuthService {
