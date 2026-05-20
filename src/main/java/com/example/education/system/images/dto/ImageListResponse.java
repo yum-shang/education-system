@@ -11,7 +11,7 @@ public class ImageListResponse {
 
     @lombok.Data
     public static class Data {
-        private List<?> list;
+        private List<ImageInfo> list;
         private Integer total;
         private Integer page;
         private Integer pageSize;

@@ -106,6 +106,7 @@ public class ImageService {
             info.setFilePath(image.getFilePath());
             info.setFileName(image.getFileName());
             info.setFileType(image.getFileType());
+            info.setUserId(image.getUserId());
             if (image.getUploadTime() != null) {
                 info.setUploadTime(image.getUploadTime().format(formatter));
             }

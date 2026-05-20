@@ -23,6 +23,7 @@ public class GetImageListResponse {
         private String filePath;
         private String fileName;
         private String fileType;
+        private Integer userId;
         private String uploadTime;
     }
 }

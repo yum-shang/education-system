@@ -2,12 +2,21 @@ package com.example.education.system.grades.service;
 
 import com.example.education.system.grades.dto.CreateGradeRequest;
 import com.example.education.system.grades.dto.GradeListResponse;
+import com.example.education.system.grades.dto.GradeReportRow;
 import com.example.education.system.grades.model.Grade;
 import com.example.education.system.grades.repository.GradeRepository;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
@@ -131,5 +140,43 @@ public class GradeService {
 
         response.setData(data);
         return response;
+    }
+
+    public void exportGradeReport(Integer scheduleId, HttpServletResponse response) throws IOException {
+        List<GradeReportRow> rows = gradeRepository.findGradeReportByScheduleId(scheduleId);
+
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("成绩报表");
+
+        Row headerRow = sheet.createRow(0);
+        headerRow.createCell(0).setCellValue("学生姓名");
+        headerRow.createCell(1).setCellValue("学号");
+        headerRow.createCell(2).setCellValue("分数");
+        headerRow.createCell(3).setCellValue("等级");
+        headerRow.createCell(4).setCellValue("评语");
+
+        int rowIndex = 1;
+        for (GradeReportRow row : rows) {
+            Row dataRow = sheet.createRow(rowIndex++);
+            dataRow.createCell(0).setCellValue(row.getStudentName() != null ? row.getStudentName() : "");
+            dataRow.createCell(1).setCellValue(row.getStudentNumber() != null ? row.getStudentNumber() : "");
+            dataRow.createCell(2).setCellValue(row.getScore() != null ? row.getScore() : 0);
+            dataRow.createCell(3).setCellValue(row.getGradeLevel() != null ? row.getGradeLevel() : "");
+            dataRow.createCell(4).setCellValue(row.getComment() != null ? row.getComment() : "");
+        }
+
+        for (int i = 0; i < 5; i++) {
+            sheet.autoSizeColumn(i);
+        }
+
+        String fileName = "成绩报表_" + scheduleId + ".xlsx";
+        String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8).replaceAll("\\+", "%20");
+
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader("Content-Disposition", "attachment; filename*=UTF-8''" + encodedFileName);
+        response.setHeader("Access-Control-Expose-Headers", "Content-Disposition");
+
+        workbook.write(response.getOutputStream());
+        workbook.close();
     }
 }

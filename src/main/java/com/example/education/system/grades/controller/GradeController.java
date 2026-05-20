@@ -4,8 +4,11 @@ import com.example.education.system.grades.dto.CreateGradeRequest;
 import com.example.education.system.grades.dto.GradeListResponse;
 import com.example.education.system.grades.service.GradeService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/grades")
@@ -43,11 +46,10 @@ public class GradeController {
 
     @GetMapping("/report")
     public void downloadGradeReport(
-            @RequestParam(required = false) Integer scheduleId,
-            @RequestParam(required = false) String semester,
-            @RequestParam(required = false) Integer year,
-            @RequestParam String format) {
-        // 实现报表下载逻辑
+            @RequestParam Integer scheduleId,
+            @RequestParam String format,
+            HttpServletResponse response) throws IOException {
+        gradeService.exportGradeReport(scheduleId, response);
     }
 }
 
