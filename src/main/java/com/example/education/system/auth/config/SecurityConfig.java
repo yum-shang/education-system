@@ -10,6 +10,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -46,6 +47,7 @@ public class SecurityConfig {
                 .requestMatchers("/users/*/password").authenticated()
                 .requestMatchers("/users/**").hasRole("admin")
                 .requestMatchers("/courses/**").hasRole("admin")
+                .requestMatchers(HttpMethod.GET, "/course-schedules").hasAnyRole("teacher", "admin")
                 .requestMatchers("/course-schedules/**").hasRole("admin")
                 .requestMatchers("/course-enrollments").hasRole("student")
                 .requestMatchers("/course-enrollments/my").hasRole("student")
@@ -56,6 +58,7 @@ public class SecurityConfig {
                 .requestMatchers("/grades/**").hasAnyRole("teacher", "admin")
                 .requestMatchers("/research-projects").hasAnyRole("teacher", "student", "admin")
                 .requestMatchers("/research-projects/**").hasAnyRole("teacher", "admin")
+                .requestMatchers(HttpMethod.POST, "/project-applications").hasRole("student")
                 .requestMatchers("/project-applications").hasAnyRole("teacher", "admin")
                 .requestMatchers("/project-applications/**").hasAnyRole("teacher", "admin")
                 .requestMatchers("/innovation-teams").hasAnyRole("student", "admin")

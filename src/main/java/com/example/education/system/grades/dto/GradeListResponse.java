@@ -11,7 +11,7 @@ public class GradeListResponse {
 
     @lombok.Data
     public static class Data {
-        private List<GradeInfo> list;
+        private List<?> list;
         private Integer total;
         private Integer page;
         private Integer pageSize;

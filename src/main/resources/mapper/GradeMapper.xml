@@ -51,4 +51,44 @@
         WHERE ce.schedule_id = #{scheduleId}
         ORDER BY s.student_number
     </select>
+
+    <select id="findGradeInfoByScheduleId" resultType="com.example.education.system.grades.dto.GradeListResponse$GradeInfo">
+        SELECT g.grade_id AS gradeId, g.score, g.grade_level AS gradeLevel,
+               g.comment, g.created_at AS createdAt,
+               s.student_id AS studentId, s.name AS studentName,
+               s.student_number AS studentNumber,
+               c.course_name AS courseName, c.credit,
+               t.name AS teacherName,
+               cs.semester, cs.year
+        FROM grades g
+        JOIN course_enrollments ce ON g.enrollment_id = ce.enrollment_id
+        JOIN students s ON ce.student_id = s.student_id
+        JOIN course_schedules cs ON ce.schedule_id = cs.schedule_id
+        JOIN courses c ON cs.course_id = c.course_id
+        JOIN teachers t ON cs.teacher_id = t.teacher_id
+        WHERE ce.schedule_id = #{scheduleId}
+        <if test="gradeLevel != null and gradeLevel != ''">
+            AND g.grade_level = #{gradeLevel}
+        </if>
+        ORDER BY s.student_number
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countGradeInfoByScheduleId" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM grades g
+        JOIN course_enrollments ce ON g.enrollment_id = ce.enrollment_id
+        WHERE ce.schedule_id = #{scheduleId}
+        <if test="gradeLevel != null and gradeLevel != ''">
+            AND g.grade_level = #{gradeLevel}
+        </if>
+    </select>
+
+    <select id="countGradesByLevel" resultType="com.example.education.system.grades.dto.GradeStats">
+        SELECT g.grade_level AS gradeLevel, COUNT(*) AS count
+        FROM grades g
+        JOIN course_enrollments ce ON g.enrollment_id = ce.enrollment_id
+        WHERE ce.schedule_id = #{scheduleId}
+        GROUP BY g.grade_level
+    </select>
 </mapper>

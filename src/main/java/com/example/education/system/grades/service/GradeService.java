@@ -3,6 +3,7 @@ package com.example.education.system.grades.service;
 import com.example.education.system.grades.dto.CreateGradeRequest;
 import com.example.education.system.grades.dto.GradeListResponse;
 import com.example.education.system.grades.dto.GradeReportRow;
+import com.example.education.system.grades.dto.GradeStats;
 import com.example.education.system.grades.model.Grade;
 import com.example.education.system.grades.repository.GradeRepository;
 import org.apache.poi.ss.usermodel.Row;
@@ -22,15 +23,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-/**
- * 成绩管理服务
- * 
- * 负责学生成绩的录入和查询，包括：
- * - 教师录入学生成绩
- * - 教师修改学生成绩
- * - 教师查询课程成绩列表
- * - 学生查询个人成绩列表
- */
 @Service
 public class GradeService {
 
@@ -85,29 +77,35 @@ public class GradeService {
 
     public GradeListResponse getTeacherGrades(Integer scheduleId, String gradeLevel, Integer page, Integer pageSize) {
         int offset = (page - 1) * pageSize;
-        List<Grade> grades = gradeRepository.findGradesByScheduleId(scheduleId, gradeLevel, offset, pageSize);
+        List<GradeListResponse.GradeInfo> gradeInfos = gradeRepository.findGradeInfoByScheduleId(scheduleId, gradeLevel, offset, pageSize);
+        Integer total = gradeRepository.countGradeInfoByScheduleId(scheduleId, gradeLevel);
 
         GradeListResponse response = new GradeListResponse();
         response.setCode(200);
         response.setMessage("获取成功");
 
         GradeListResponse.Data data = new GradeListResponse.Data();
-        List<GradeListResponse.GradeInfo> gradeInfos = new ArrayList<>();
-
-        for (Grade grade : grades) {
-            GradeListResponse.GradeInfo info = new GradeListResponse.GradeInfo();
-            info.setGradeId(grade.getGradeId());
-            info.setScore(grade.getScore());
-            info.setGradeLevel(grade.getGradeLevel());
-            info.setComment(grade.getComment());
-            info.setCreatedAt(grade.getCreatedAt().toString());
-            gradeInfos.add(info);
-        }
-
         data.setList(gradeInfos);
-        data.setTotal(0); // 实际应该查询总数
+        data.setTotal(total != null ? total : 0);
         data.setPage(page);
         data.setPageSize(pageSize);
+
+        response.setData(data);
+        return response;
+    }
+
+    public GradeListResponse getTeacherGradeStats(Integer scheduleId) {
+        List<GradeStats> stats = gradeRepository.countGradesByLevel(scheduleId);
+
+        GradeListResponse response = new GradeListResponse();
+        response.setCode(200);
+        response.setMessage("获取成功");
+
+        GradeListResponse.Data data = new GradeListResponse.Data();
+        data.setList(stats);
+        data.setTotal(stats.size());
+        data.setPage(1);
+        data.setPageSize(stats.size());
 
         response.setData(data);
         return response;
@@ -134,7 +132,7 @@ public class GradeService {
         }
 
         data.setList(gradeInfos);
-        data.setTotal(0); // 实际应该查询总数
+        data.setTotal(0);
         data.setPage(page);
         data.setPageSize(pageSize);
 

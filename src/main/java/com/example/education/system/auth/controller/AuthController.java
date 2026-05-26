@@ -23,28 +23,4 @@ public class AuthController {
     public AuthResponse login(@RequestBody LoginRequest request) {
         return authService.login(request);
     }
-
-    @GetMapping("/verification-code")
-    public AuthResponse getVerificationCode(
-            @RequestParam String type,
-            @RequestParam(required = false) String email,
-            @RequestParam(required = false) String phone) {
-        // 实现验证码发送逻辑
-        AuthResponse response = new AuthResponse();
-        response.setCode(200);
-        response.setMessage("验证码发送成功");
-        return response;
-    }
-
-    @PostMapping("/reset-password")
-    public AuthResponse resetPassword(
-            @RequestParam String email,
-            @RequestParam String verificationCode,
-            @RequestParam String newPassword) {
-        // 实现密码重置逻辑
-        AuthResponse response = new AuthResponse();
-        response.setCode(200);
-        response.setMessage("密码重置成功");
-        return response;
-    }
 }

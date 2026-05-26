@@ -68,6 +68,12 @@ class TeacherGradeController {
             @RequestParam Integer pageSize) {
         return gradeService.getTeacherGrades(scheduleId, gradeLevel, page, pageSize);
     }
+
+    @GetMapping("/stats")
+    public GradeListResponse getTeacherGradeStats(
+            @RequestParam Integer scheduleId) {
+        return gradeService.getTeacherGradeStats(scheduleId);
+    }
 }
 
 @RestController
