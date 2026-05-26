@@ -4,21 +4,21 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class UserListResponse {
+public class StudentListResponse {
     private Integer code;
     private String message;
     private Data data;
 
     @lombok.Data
     public static class Data {
-        private List<UserInfo> list;
+        private List<StudentInfo> list;
         private Integer total;
         private Integer page;
         private Integer pageSize;
     }
 
     @lombok.Data
-    public static class UserInfo {
+    public static class StudentInfo {
         private Integer userId;
         private String username;
         private String email;
@@ -27,5 +27,11 @@ public class UserListResponse {
         private Integer avatarId;
         private String createdAt;
         private String name;
+        private String studentNumber;
+        private String major;
+        private String grade;
+        private String clazz;
+        private String department;
+        private String gender;
     }
 }

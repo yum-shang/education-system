@@ -63,4 +63,9 @@ class CourseScheduleController {
             @RequestParam Integer pageSize) {
         return courseService.getCourseScheduleList(courseId, teacherId, semester, year, page, pageSize);
     }
+
+    @DeleteMapping("/{scheduleId}")
+    public CourseListResponse deleteCourseSchedule(@PathVariable Integer scheduleId) {
+        return courseService.deleteCourseSchedule(scheduleId);
+    }
 }

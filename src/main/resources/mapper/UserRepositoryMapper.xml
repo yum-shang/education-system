@@ -40,6 +40,41 @@
         WHERE user_id = #{userId}
     </update>
 
+    <delete id="deleteUser">
+        DELETE FROM users WHERE user_id = #{userId}
+    </delete>
+
+    <select id="findStudents" resultType="com.example.education.system.users.model.Student">
+        SELECT s.* FROM students s
+        INNER JOIN users u ON s.student_id = u.user_id
+        WHERE 1=1
+        <if test="keyword != null and keyword != ''">
+            AND (s.name LIKE CONCAT('%', #{keyword}, '%') OR u.username LIKE CONCAT('%', #{keyword}, '%') OR u.email LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="department != null and department != ''">
+            AND s.department = #{department}
+        </if>
+        <if test="grade != null and grade != ''">
+            AND s.grade = #{grade}
+        </if>
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countStudents" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM students s
+        INNER JOIN users u ON s.student_id = u.user_id
+        WHERE 1=1
+        <if test="keyword != null and keyword != ''">
+            AND (s.name LIKE CONCAT('%', #{keyword}, '%') OR u.username LIKE CONCAT('%', #{keyword}, '%') OR u.email LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="department != null and department != ''">
+            AND s.department = #{department}
+        </if>
+        <if test="grade != null and grade != ''">
+            AND s.grade = #{grade}
+        </if>
+    </select>
+
     <!-- 教师相关操作 -->
     <select id="findTeacherById" resultType="com.example.education.system.users.model.Teacher">
         SELECT * FROM teachers WHERE teacher_id = #{teacherId}
@@ -65,8 +100,8 @@
     </select>
 
     <insert id="insertStudent" parameterType="com.example.education.system.users.model.Student">
-        INSERT INTO students (student_id, name, student_number, major, grade, class)
-        VALUES (#{studentId}, #{name}, #{studentNumber}, #{major}, #{grade}, #{clazz})
+        INSERT INTO students (student_id, name, student_number, major, grade, class, department, gender)
+        VALUES (#{studentId}, #{name}, #{studentNumber}, #{major}, #{grade}, #{clazz}, #{department}, #{gender})
     </insert>
 
     <update id="updateStudent" parameterType="com.example.education.system.users.model.Student">
@@ -75,7 +110,9 @@
         student_number = #{studentNumber},
         major = #{major},
         grade = #{grade},
-        class = #{clazz}
+        class = #{clazz},
+        department = #{department},
+        gender = #{gender}
         WHERE student_id = #{studentId}
     </update>
 </mapper>

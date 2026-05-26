@@ -5,6 +5,8 @@ import com.example.education.system.courses.dto.CourseListResponse;
 import com.example.education.system.courses.model.Course;
 import com.example.education.system.courses.model.CourseSchedule;
 import com.example.education.system.courses.repository.CourseRepository;
+import com.example.education.system.users.model.Teacher;
+import com.example.education.system.users.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +28,9 @@ public class CourseService {
 
     @Autowired
     private CourseRepository courseRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Transactional
     public CourseListResponse createCourse(CreateCourseRequest request) {
@@ -118,6 +123,24 @@ public class CourseService {
         return response;
     }
 
+    @Transactional
+    public CourseListResponse deleteCourseSchedule(Integer scheduleId) {
+        CourseSchedule schedule = courseRepository.findScheduleById(scheduleId);
+        if (schedule == null) {
+            CourseListResponse response = new CourseListResponse();
+            response.setCode(404);
+            response.setMessage("排课记录不存在");
+            return response;
+        }
+
+        courseRepository.deleteSchedule(scheduleId);
+
+        CourseListResponse response = new CourseListResponse();
+        response.setCode(200);
+        response.setMessage("排课删除成功");
+        return response;
+    }
+
     public CourseListResponse getCourseScheduleList(Integer courseId, Integer teacherId, String semester, Integer year, Integer page, Integer pageSize) {
         int offset = (page - 1) * pageSize;
         List<CourseSchedule> schedules = courseRepository.findSchedules(courseId, teacherId, semester, year, offset, pageSize);
@@ -148,7 +171,14 @@ public class CourseService {
                     info.setCourseCode(course.getCourseCode());
                 }
             }
-            
+
+            if (schedule.getTeacherId() != null) {
+                Teacher teacher = userRepository.findTeacherById(schedule.getTeacherId());
+                if (teacher != null) {
+                    info.setTeacherName(teacher.getName());
+                }
+            }
+
             scheduleInfos.add(info);
         }
 

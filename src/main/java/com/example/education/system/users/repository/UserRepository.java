@@ -19,6 +19,12 @@ public interface UserRepository {
     User findByPhone(@Param("phone") String phone);
     User findByEmail(@Param("email") String email);
     void updateUser(User user);
+    void deleteUser(@Param("userId") Integer userId);
+
+    // 学生列表查询（支持关键词、院系、年级筛选）
+    List<Student> findStudents(@Param("keyword") String keyword, @Param("department") String department,
+                               @Param("grade") String grade, @Param("offset") Integer offset, @Param("limit") Integer limit);
+    Integer countStudents(@Param("keyword") String keyword, @Param("department") String department, @Param("grade") String grade);
 
     // 教师相关操作
     Teacher findTeacherById(@Param("teacherId") Integer teacherId);

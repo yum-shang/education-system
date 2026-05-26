@@ -47,6 +47,7 @@ public class SecurityConfig {
                 .requestMatchers("/users/*/password").authenticated()
                 .requestMatchers("/users/**").hasRole("admin")
                 .requestMatchers("/courses/**").hasRole("admin")
+                .requestMatchers("/students/**").hasRole("admin")
                 .requestMatchers(HttpMethod.GET, "/course-schedules").hasAnyRole("teacher", "admin")
                 .requestMatchers("/course-schedules/**").hasRole("admin")
                 .requestMatchers("/course-enrollments").hasRole("student")

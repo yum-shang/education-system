@@ -60,6 +60,11 @@
     <select id="findScheduleById" resultType="com.example.education.system.courses.model.CourseSchedule">
         SELECT * FROM course_schedules WHERE schedule_id = #{scheduleId} LIMIT 1
     </select>
+
+    <delete id="deleteSchedule">
+        DELETE FROM course_schedules WHERE schedule_id = #{scheduleId}
+    </delete>
+
     <select id="findScheduleByTeacherAndTime" resultType="com.example.education.system.courses.model.CourseSchedule">
         SELECT * FROM course_schedules
         WHERE teacher_id = #{teacherId}
@@ -68,5 +73,25 @@
         AND semester = #{semester}
         AND year = #{year}
         LIMIT 1
+    </select>
+
+    <select id="findSchedulesByTeacher" resultType="com.example.education.system.courses.model.CourseSchedule">
+        SELECT * FROM course_schedules
+        WHERE teacher_id = #{teacherId}
+        AND semester = #{semester}
+        AND year = #{year}
+        ORDER BY day_of_week, start_time
+    </select>
+
+    <select id="findOccupiedClassrooms" resultType="java.lang.String">
+        SELECT classroom FROM course_schedules
+        WHERE day_of_week = #{dayOfWeek}
+        AND semester = #{semester}
+        AND year = #{year}
+        AND (
+            (start_time &lt;= #{startTime} AND end_time &gt; #{startTime})
+            OR (start_time &lt; #{endTime} AND end_time &gt;= #{endTime})
+            OR (start_time &gt;= #{startTime} AND end_time &lt;= #{endTime})
+        )
     </select>
 </mapper>

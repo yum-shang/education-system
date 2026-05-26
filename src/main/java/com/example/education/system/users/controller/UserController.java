@@ -38,12 +38,17 @@ public class UserController {
             @RequestParam(required = false) String role,
             @RequestParam Integer page,
             @RequestParam Integer pageSize) {
-        // 检查权限，只有管理员可以获取用户列表
         String currentRole = getRoleFromToken();
         if (!"admin".equals(currentRole)) {
             UserListResponse response = new UserListResponse();
             response.setCode(403);
             response.setMessage("权限不足，只有管理员可以获取用户列表");
+            return response;
+        }
+        if ("admin".equals(role)) {
+            UserListResponse response = new UserListResponse();
+            response.setCode(400);
+            response.setMessage("不支持查询管理员列表");
             return response;
         }
         return userService.getUserList(role, page, pageSize);

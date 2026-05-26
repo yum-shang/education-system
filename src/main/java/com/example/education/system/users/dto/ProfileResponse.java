@@ -21,8 +21,9 @@ public class ProfileResponse {
         private String major;
         private String grade;
         private String clazz;
-        private String title;
         private String department;
+        private String gender;
+        private String title;
         private String bio;
     }
 }

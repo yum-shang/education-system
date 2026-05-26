@@ -13,6 +13,4 @@ public interface ClassroomRepository {
     List<Classroom> findAll();
     Classroom findById(@Param("classroomId") Integer classroomId);
     Classroom findByName(@Param("classroomName") String classroomName);
-    void updateTimeSlot(@Param("classroomId") Integer classroomId, @Param("timeSlot") Integer timeSlot, @Param("status") Integer status);
-    List<Classroom> findAvailableByTimeSlot(@Param("timeSlot") Integer timeSlot);
 }

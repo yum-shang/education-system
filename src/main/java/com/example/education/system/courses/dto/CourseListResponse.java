@@ -33,6 +33,7 @@ public class CourseListResponse {
         private String courseName;
         private String courseCode;
         private Integer teacherId;
+        private String teacherName;
         private String classroom;
         private Integer dayOfWeek;
         private String startTime;
