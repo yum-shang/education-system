@@ -33,5 +33,7 @@ public class UserListResponse {
         private String clazz;
         private String department;
         private String gender;
+        private String title;
+        private String bio;
     }
 }

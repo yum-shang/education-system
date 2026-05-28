@@ -64,6 +64,9 @@ public class UserService {
                 Teacher teacher = userRepository.findTeacherById(user.getUserId());
                 if (teacher != null) {
                     info.setName(teacher.getName());
+                    info.setTitle(teacher.getTitle());
+                    info.setDepartment(teacher.getDepartment());
+                    info.setBio(teacher.getBio());
                 }
             } else if ("student".equals(user.getRole())) {
                 Student student = userRepository.findStudentById(user.getUserId());
