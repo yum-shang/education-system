@@ -27,5 +27,11 @@ public class UserListResponse {
         private Integer avatarId;
         private String createdAt;
         private String name;
+        private String studentNumber;
+        private String major;
+        private String grade;
+        private String clazz;
+        private String department;
+        private String gender;
     }
 }

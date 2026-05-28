@@ -69,6 +69,12 @@ public class UserService {
                 Student student = userRepository.findStudentById(user.getUserId());
                 if (student != null) {
                     info.setName(student.getName());
+                    info.setStudentNumber(student.getStudentNumber());
+                    info.setMajor(student.getMajor());
+                    info.setGrade(student.getGrade());
+                    info.setClazz(student.getClazz());
+                    info.setDepartment(student.getDepartment());
+                    info.setGender(student.getGender());
                 }
             }
 
