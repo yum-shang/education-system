@@ -2,6 +2,7 @@ package com.example.education.system.courses.service;
 
 import com.example.education.system.courses.dto.CreateCourseRequest;
 import com.example.education.system.courses.dto.CourseListResponse;
+import com.example.education.system.courses.dto.SemesterInfo;
 import com.example.education.system.courses.model.Course;
 import com.example.education.system.courses.model.CourseSchedule;
 import com.example.education.system.courses.repository.CourseRepository;
@@ -189,5 +190,9 @@ public class CourseService {
 
         response.setData(data);
         return response;
+    }
+
+    public List<SemesterInfo> getDistinctSemesters() {
+        return courseRepository.findDistinctSemesters();
     }
 }

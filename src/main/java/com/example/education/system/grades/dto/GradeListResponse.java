@@ -28,6 +28,7 @@ public class GradeListResponse {
         private String comment;
         private String createdAt;
         private String courseName;
+        private String courseCode;
         private Double credit;
         private String teacherName;
         private String semester;

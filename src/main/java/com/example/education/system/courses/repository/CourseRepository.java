@@ -28,4 +28,8 @@ public interface CourseRepository {
 
     List<String> findOccupiedClassrooms(@Param("dayOfWeek") Integer dayOfWeek, @Param("startTime") String startTime,
                                         @Param("endTime") String endTime, @Param("semester") String semester, @Param("year") Integer year);
+
+    Integer countCourses(@Param("courseName") String courseName, @Param("courseCode") String courseCode);
+
+    List<com.example.education.system.courses.dto.SemesterInfo> findDistinctSemesters();
 }

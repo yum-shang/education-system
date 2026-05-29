@@ -20,6 +20,7 @@ public interface UserRepository {
     User findByEmail(@Param("email") String email);
     void updateUser(User user);
     void deleteUser(@Param("userId") Integer userId);
+    List<User> findRecentUsers(@Param("limit") Integer limit);
 
     // 学生列表查询（支持关键词、院系、年级筛选）
     List<Student> findStudents(@Param("keyword") String keyword, @Param("department") String department,
@@ -35,4 +36,6 @@ public interface UserRepository {
     Student findStudentById(@Param("studentId") Integer studentId);
     void insertStudent(Student student);
     void updateStudent(Student student);
+
+    Double sumStudentCredits(@Param("studentId") Integer studentId);
 }

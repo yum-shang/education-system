@@ -57,7 +57,7 @@
                g.comment, g.created_at AS createdAt,
                s.student_id AS studentId, s.name AS studentName,
                s.student_number AS studentNumber,
-               c.course_name AS courseName, c.credit,
+               c.course_name AS courseName, c.course_code AS courseCode, c.credit,
                t.name AS teacherName,
                cs.semester, cs.year
         FROM grades g
@@ -90,5 +90,55 @@
         JOIN course_enrollments ce ON g.enrollment_id = ce.enrollment_id
         WHERE ce.schedule_id = #{scheduleId}
         GROUP BY g.grade_level
+    </select>
+
+    <select id="findGradeInfoByStudentId" resultType="com.example.education.system.grades.dto.GradeListResponse$GradeInfo">
+        SELECT g.grade_id AS gradeId, g.score, g.grade_level AS gradeLevel,
+               g.comment, g.created_at AS createdAt,
+               c.course_name AS courseName, c.course_code AS courseCode, c.credit,
+               t.name AS teacherName,
+               cs.semester, cs.year
+        FROM grades g
+        JOIN course_enrollments ce ON g.enrollment_id = ce.enrollment_id
+        JOIN course_schedules cs ON ce.schedule_id = cs.schedule_id
+        JOIN courses c ON cs.course_id = c.course_id
+        JOIN teachers t ON cs.teacher_id = t.teacher_id
+        WHERE ce.student_id = #{studentId}
+        <if test="semester != null and semester != ''">
+            AND cs.semester = #{semester}
+        </if>
+        <if test="year != null">
+            AND cs.year = #{year}
+        </if>
+        ORDER BY cs.year DESC, cs.semester DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countGradeInfoByStudentId" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM grades g
+        JOIN course_enrollments ce ON g.enrollment_id = ce.enrollment_id
+        JOIN course_schedules cs ON ce.schedule_id = cs.schedule_id
+        WHERE ce.student_id = #{studentId}
+        <if test="semester != null and semester != ''">
+            AND cs.semester = #{semester}
+        </if>
+        <if test="year != null">
+            AND cs.year = #{year}
+        </if>
+    </select>
+
+    <select id="avgScoreBySemester" resultType="com.example.education.system.grades.dto.GradeTrendItem">
+        SELECT cs.semester, cs.year,
+               CAST(AVG(g.score) AS DECIMAL(5,2)) AS avgScore,
+               CAST(SUM(c.credit) AS DECIMAL(5,1)) AS totalCredit,
+               COUNT(*) AS courseCount
+        FROM grades g
+        JOIN course_enrollments ce ON g.enrollment_id = ce.enrollment_id
+        JOIN course_schedules cs ON ce.schedule_id = cs.schedule_id
+        JOIN courses c ON cs.course_id = c.course_id
+        WHERE ce.student_id = #{studentId}
+        GROUP BY cs.year, cs.semester
+        ORDER BY cs.year DESC, cs.semester DESC
     </select>
 </mapper>

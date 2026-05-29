@@ -94,4 +94,21 @@
             OR (start_time &gt;= #{startTime} AND end_time &lt;= #{endTime})
         )
     </select>
+
+    <select id="countCourses" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM courses
+        WHERE 1=1
+        <if test="courseName != null and courseName != ''">
+            AND course_name LIKE CONCAT('%', #{courseName}, '%')
+        </if>
+        <if test="courseCode != null and courseCode != ''">
+            AND course_code LIKE CONCAT('%', #{courseCode}, '%')
+        </if>
+    </select>
+
+    <select id="findDistinctSemesters" resultType="com.example.education.system.courses.dto.SemesterInfo">
+        SELECT DISTINCT semester, year
+        FROM course_schedules
+        ORDER BY year DESC, semester DESC
+    </select>
 </mapper>

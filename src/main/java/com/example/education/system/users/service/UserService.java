@@ -4,6 +4,9 @@ import com.example.education.system.users.dto.UserListResponse;
 import com.example.education.system.users.dto.ProfileResponse;
 import com.example.education.system.users.dto.StudentListResponse;
 import com.example.education.system.users.dto.BatchImportStudentRequest;
+import com.example.education.system.users.dto.BatchImportResultResponse;
+import com.example.education.system.users.dto.BatchImportResultItem;
+import com.example.education.system.users.dto.CreateStudentRequest;
 import com.example.education.system.auth.model.User;
 import com.example.education.system.users.model.Teacher;
 import com.example.education.system.users.model.Student;
@@ -156,6 +159,8 @@ public class UserService {
                 data.setDepartment(student.getDepartment());
                 data.setGender(student.getGender());
             }
+            Double credits = userRepository.sumStudentCredits(userId);
+            data.setTotalCredit(credits != null ? credits : 0.0);
         }
 
         response.setData(data);
@@ -409,45 +414,94 @@ public class UserService {
     }
 
     @Transactional
-    public StudentListResponse batchImportStudents(BatchImportStudentRequest request) {
-        StudentListResponse response = new StudentListResponse();
+    public BatchImportResultResponse batchImportStudents(BatchImportStudentRequest request) {
+        BatchImportResultResponse response = new BatchImportResultResponse();
         response.setCode(200);
-        response.setMessage("批量导入完成");
 
-        List<StudentListResponse.StudentInfo> results = new ArrayList<>();
+        List<BatchImportResultItem> results = new ArrayList<>();
         if (request.getStudents() == null || request.getStudents().isEmpty()) {
-            StudentListResponse.Data data = new StudentListResponse.Data();
-            data.setList(results);
-            data.setTotal(0);
-            data.setPage(1);
-            data.setPageSize(request.getStudents() != null ? request.getStudents().size() : 0);
-            response.setData(data);
+            response.setMessage("没有要导入的数据");
+            response.setData(results);
             return response;
         }
 
-        int successCount = 0;
-        for (com.example.education.system.users.dto.CreateStudentRequest item : request.getStudents()) {
-            try {
-                StudentListResponse result = createStudent(item);
-                if (result.getCode() == 200) {
-                    successCount++;
+        java.util.Set<String> batchPhones = new java.util.HashSet<>();
+        java.util.Map<String, Integer> phoneRowMap = new java.util.LinkedHashMap<>();
+        for (int i = 0; i < request.getStudents().size(); i++) {
+            CreateStudentRequest item = request.getStudents().get(i);
+            if (item.getPhone() != null && !item.getPhone().isEmpty()) {
+                if (phoneRowMap.containsKey(item.getPhone())) {
+                    int prevIdx = phoneRowMap.get(item.getPhone());
+                    BatchImportResultItem fail = new BatchImportResultItem();
+                    fail.setUsername(item.getUsername());
+                    fail.setName(item.getName());
+                    fail.setSuccess(false);
+                    fail.setErrorMessage("手机号与第" + (prevIdx + 1) + "行重复");
+                    results.add(fail);
+                    continue;
                 }
+                phoneRowMap.put(item.getPhone(), i);
+            }
+            batchPhones.add(item.getPhone());
+        }
+
+        for (int i = 0; i < request.getStudents().size(); i++) {
+            CreateStudentRequest item = request.getStudents().get(i);
+
+            boolean alreadyFailed = false;
+            for (BatchImportResultItem r : results) {
+                if (r.getUsername() != null && r.getUsername().equals(item.getUsername())) {
+                    alreadyFailed = true;
+                    break;
+                }
+            }
+            if (alreadyFailed) continue;
+
+            try {
+                if (item.getPassword() == null || item.getPassword().isEmpty()) {
+                    item.setPassword("123456");
+                }
+
+                if (item.getPhone() != null && !item.getPhone().isEmpty()) {
+                    User existingUser = userRepository.findByPhone(item.getPhone());
+                    if (existingUser != null) {
+                        BatchImportResultItem fail = new BatchImportResultItem();
+                        fail.setUsername(item.getUsername());
+                        fail.setName(item.getName());
+                        fail.setSuccess(false);
+                        fail.setErrorMessage("手机号已被注册");
+                        results.add(fail);
+                        continue;
+                    }
+                }
+
+                StudentListResponse createResult = createStudent(item);
+                BatchImportResultItem ok = new BatchImportResultItem();
+                ok.setUsername(item.getUsername());
+                ok.setName(item.getName());
+                if (createResult.getCode() == 200 && createResult.getData() != null) {
+                    ok.setSuccess(true);
+                    if (item.getStudentNumber() != null && !item.getStudentNumber().isEmpty()) {
+                        ok.setStudentNumber(item.getStudentNumber());
+                    }
+                } else {
+                    ok.setSuccess(false);
+                    ok.setErrorMessage(createResult.getMessage());
+                }
+                results.add(ok);
             } catch (Exception e) {
-                StudentListResponse.StudentInfo info = new StudentListResponse.StudentInfo();
-                info.setUsername(item.getUsername());
-                info.setName(item.getName());
-                results.add(info);
+                BatchImportResultItem fail = new BatchImportResultItem();
+                fail.setUsername(item.getUsername());
+                fail.setName(item.getName());
+                fail.setSuccess(false);
+                fail.setErrorMessage(e.getMessage() != null ? e.getMessage() : "导入失败");
+                results.add(fail);
             }
         }
 
-        response.setMessage("批量导入完成，成功 " + successCount + " 条，失败 " + (request.getStudents().size() - successCount) + " 条");
-
-        StudentListResponse.Data data = new StudentListResponse.Data();
-        data.setList(new ArrayList<>());
-        data.setTotal(successCount);
-        data.setPage(1);
-        data.setPageSize(request.getStudents().size());
-        response.setData(data);
+        long successCount = results.stream().filter(BatchImportResultItem::isSuccess).count();
+        response.setMessage("批量导入完成：成功 " + successCount + " 条，失败 " + (results.size() - successCount) + " 条");
+        response.setData(results);
         return response;
     }
 }

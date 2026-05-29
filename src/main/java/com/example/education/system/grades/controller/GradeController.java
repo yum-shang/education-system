@@ -100,6 +100,18 @@ class StudentGradeController {
         return gradeService.getStudentGrades(studentId, semester, year, page, pageSize);
     }
 
+    @GetMapping("/trend")
+    public GradeListResponse getStudentGradeTrend(HttpServletRequest request) {
+        Integer studentId = getCurrentStudentId(request);
+        if (studentId == null) {
+            GradeListResponse response = new GradeListResponse();
+            response.setCode(401);
+            response.setMessage("未登录或登录已过期");
+            return response;
+        }
+        return gradeService.getStudentGradeTrend(studentId);
+    }
+
     private Integer getCurrentStudentId(HttpServletRequest request) {
         Object userId = request.getAttribute("userId");
         if (userId != null) {

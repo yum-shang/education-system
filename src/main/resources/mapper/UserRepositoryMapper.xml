@@ -44,7 +44,15 @@
         DELETE FROM users WHERE user_id = #{userId}
     </delete>
 
-    <select id="findStudents" resultType="com.example.education.system.users.model.Student">
+    <select id="findRecentUsers" resultType="com.example.education.system.auth.model.User">
+        SELECT * FROM users ORDER BY created_at DESC LIMIT #{limit}
+    </select>
+
+    <resultMap id="StudentResultMap" type="com.example.education.system.users.model.Student">
+        <result column="class" property="clazz"/>
+    </resultMap>
+
+    <select id="findStudents" resultMap="StudentResultMap">
         SELECT s.* FROM students s
         INNER JOIN users u ON s.student_id = u.user_id
         WHERE 1=1
@@ -95,7 +103,7 @@
     </update>
 
     <!-- 学生相关操作 -->
-    <select id="findStudentById" resultType="com.example.education.system.users.model.Student">
+    <select id="findStudentById" resultMap="StudentResultMap">
         SELECT * FROM students WHERE student_id = #{studentId}
     </select>
 
@@ -115,4 +123,12 @@
         gender = #{gender}
         WHERE student_id = #{studentId}
     </update>
+
+    <select id="sumStudentCredits" resultType="java.lang.Double">
+        SELECT COALESCE(SUM(c.credit), 0)
+        FROM course_enrollments ce
+        JOIN course_schedules cs ON ce.schedule_id = cs.schedule_id
+        JOIN courses c ON cs.course_id = c.course_id
+        WHERE ce.student_id = #{studentId}
+    </select>
 </mapper>

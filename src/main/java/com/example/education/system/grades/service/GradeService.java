@@ -4,6 +4,7 @@ import com.example.education.system.grades.dto.CreateGradeRequest;
 import com.example.education.system.grades.dto.GradeListResponse;
 import com.example.education.system.grades.dto.GradeReportRow;
 import com.example.education.system.grades.dto.GradeStats;
+import com.example.education.system.grades.dto.GradeTrendItem;
 import com.example.education.system.grades.model.Grade;
 import com.example.education.system.grades.repository.GradeRepository;
 import org.apache.poi.ss.usermodel.Row;
@@ -113,28 +114,35 @@ public class GradeService {
 
     public GradeListResponse getStudentGrades(Integer studentId, String semester, Integer year, Integer page, Integer pageSize) {
         int offset = (page - 1) * pageSize;
-        List<Grade> grades = gradeRepository.findGradesByStudentId(studentId, semester, year, offset, pageSize);
+        List<GradeListResponse.GradeInfo> gradeInfos = gradeRepository.findGradeInfoByStudentId(studentId, semester, year, offset, pageSize);
+        Integer total = gradeRepository.countGradeInfoByStudentId(studentId, semester, year);
 
         GradeListResponse response = new GradeListResponse();
         response.setCode(200);
         response.setMessage("获取成功");
 
         GradeListResponse.Data data = new GradeListResponse.Data();
-        List<GradeListResponse.GradeInfo> gradeInfos = new ArrayList<>();
-
-        for (Grade grade : grades) {
-            GradeListResponse.GradeInfo info = new GradeListResponse.GradeInfo();
-            info.setGradeId(grade.getGradeId());
-            info.setScore(grade.getScore());
-            info.setGradeLevel(grade.getGradeLevel());
-            info.setComment(grade.getComment());
-            gradeInfos.add(info);
-        }
-
         data.setList(gradeInfos);
-        data.setTotal(0);
+        data.setTotal(total != null ? total : 0);
         data.setPage(page);
         data.setPageSize(pageSize);
+
+        response.setData(data);
+        return response;
+    }
+
+    public GradeListResponse getStudentGradeTrend(Integer studentId) {
+        List<GradeTrendItem> trendItems = gradeRepository.avgScoreBySemester(studentId);
+
+        GradeListResponse response = new GradeListResponse();
+        response.setCode(200);
+        response.setMessage("获取成功");
+
+        GradeListResponse.Data data = new GradeListResponse.Data();
+        data.setList(trendItems);
+        data.setTotal(trendItems.size());
+        data.setPage(1);
+        data.setPageSize(trendItems.size());
 
         response.setData(data);
         return response;

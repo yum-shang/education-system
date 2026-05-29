@@ -48,4 +48,142 @@
     <select id="findEnrollmentByStudentAndSchedule" resultType="com.example.education.system.courses.model.CourseEnrollment">
         SELECT * FROM course_enrollments WHERE student_id = #{studentId} AND schedule_id = #{scheduleId} LIMIT 1
     </select>
+
+    <select id="findEnrollmentInfoByStudentId" resultType="com.example.education.system.courses.dto.EnrollmentInfo">
+        SELECT ce.enrollment_id AS enrollmentId,
+               ce.schedule_id AS scheduleId,
+               ce.status,
+               c.course_name AS courseName,
+               c.course_code AS courseCode,
+               c.credit,
+               t.name AS teacherName,
+               t.title AS teacherTitle,
+               t.department AS teacherDept,
+               u.email AS teacherEmail,
+               cs.classroom,
+               cs.day_of_week AS dayOfWeek,
+               cs.start_time AS startTime,
+               cs.end_time AS endTime,
+               cs.semester,
+               cs.year
+        FROM course_enrollments ce
+        JOIN course_schedules cs ON ce.schedule_id = cs.schedule_id
+        JOIN courses c ON cs.course_id = c.course_id
+        JOIN teachers t ON cs.teacher_id = t.teacher_id
+        JOIN users u ON t.teacher_id = u.user_id
+        WHERE ce.student_id = #{studentId}
+        <if test="semester != null and semester != ''">
+            AND cs.semester = #{semester}
+        </if>
+        <if test="year != null">
+            AND cs.year = #{year}
+        </if>
+        ORDER BY ce.enroll_time DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countEnrollmentInfoByStudentId" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM course_enrollments ce
+        JOIN course_schedules cs ON ce.schedule_id = cs.schedule_id
+        WHERE ce.student_id = #{studentId}
+        <if test="semester != null and semester != ''">
+            AND cs.semester = #{semester}
+        </if>
+        <if test="year != null">
+            AND cs.year = #{year}
+        </if>
+    </select>
+
+    <select id="findAvailableSchedules" resultType="com.example.education.system.courses.dto.EnrollmentInfo">
+        SELECT cs.schedule_id AS scheduleId,
+               cs.classroom,
+               cs.day_of_week AS dayOfWeek,
+               cs.start_time AS startTime,
+               cs.end_time AS endTime,
+               cs.semester,
+               cs.year,
+               c.course_name AS courseName,
+               c.course_code AS courseCode,
+               c.credit,
+               t.name AS teacherName,
+               t.title AS teacherTitle,
+               t.department AS teacherDept,
+               u.email AS teacherEmail
+        FROM course_schedules cs
+        JOIN courses c ON cs.course_id = c.course_id
+        JOIN teachers t ON cs.teacher_id = t.teacher_id
+        JOIN users u ON t.teacher_id = u.user_id
+        WHERE cs.schedule_id NOT IN (
+            SELECT schedule_id FROM course_enrollments
+            WHERE student_id = #{studentId} AND status = 'enrolled'
+        )
+        <if test="semester != null and semester != ''">
+            AND cs.semester = #{semester}
+        </if>
+        <if test="year != null">
+            AND cs.year = #{year}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (c.course_name LIKE CONCAT('%', #{keyword}, '%') OR c.course_code LIKE CONCAT('%', #{keyword}, '%') OR t.name LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        ORDER BY cs.schedule_id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countAvailableSchedules" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM course_schedules cs
+        JOIN courses c ON cs.course_id = c.course_id
+        JOIN teachers t ON cs.teacher_id = t.teacher_id
+        WHERE cs.schedule_id NOT IN (
+            SELECT schedule_id FROM course_enrollments
+            WHERE student_id = #{studentId} AND status = 'enrolled'
+        )
+        <if test="semester != null and semester != ''">
+            AND cs.semester = #{semester}
+        </if>
+        <if test="year != null">
+            AND cs.year = #{year}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (c.course_name LIKE CONCAT('%', #{keyword}, '%') OR c.course_code LIKE CONCAT('%', #{keyword}, '%') OR t.name LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+    </select>
+
+    <select id="findEnrolledStudentsByScheduleId" resultType="com.example.education.system.courses.dto.EnrolledStudentInfo">
+        SELECT ce.enrollment_id AS enrollmentId,
+               ce.student_id AS studentId,
+               s.name AS studentName,
+               s.student_number AS studentNumber,
+               s.major,
+               s.grade,
+               s.class AS clazz,
+               s.department,
+               u.phone,
+               ce.status
+        FROM course_enrollments ce
+        JOIN students s ON ce.student_id = s.student_id
+        JOIN users u ON ce.student_id = u.user_id
+        WHERE ce.schedule_id = #{scheduleId}
+        <if test="keyword != null and keyword != ''">
+            AND (s.name LIKE CONCAT('%', #{keyword}, '%') OR s.student_number LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        ORDER BY ce.enroll_time DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countEnrolledStudentsByScheduleId" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM course_enrollments ce
+        JOIN students s ON ce.student_id = s.student_id
+        WHERE ce.schedule_id = #{scheduleId}
+        <if test="keyword != null and keyword != ''">
+            AND (s.name LIKE CONCAT('%', #{keyword}, '%') OR s.student_number LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+    </select>
+
+    <delete id="deleteEnrollment">
+        DELETE FROM course_enrollments WHERE enrollment_id = #{enrollmentId}
+    </delete>
 </mapper>

@@ -130,20 +130,18 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
-        // 查找用户
-        User user = authUserRepository.findByUsername(request.getUsername());
+        User user = authUserRepository.findByPhone(request.getPhone());
         if (user == null) {
             AuthResponse response = new AuthResponse();
             response.setCode(400);
-            response.setMessage("用户名或密码错误");
+            response.setMessage("手机号或密码错误");
             return response;
         }
 
-        // 验证密码
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             AuthResponse response = new AuthResponse();
             response.setCode(400);
-            response.setMessage("用户名或密码错误");
+            response.setMessage("手机号或密码错误");
             return response;
         }
 

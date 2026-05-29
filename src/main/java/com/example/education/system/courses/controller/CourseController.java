@@ -2,10 +2,14 @@ package com.example.education.system.courses.controller;
 
 import com.example.education.system.courses.dto.CreateCourseRequest;
 import com.example.education.system.courses.dto.CourseListResponse;
+import com.example.education.system.courses.dto.SemesterInfo;
+import com.example.education.system.courses.model.Course;
 import com.example.education.system.courses.model.CourseSchedule;
 import com.example.education.system.courses.service.CourseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/courses")
@@ -67,5 +71,10 @@ class CourseScheduleController {
     @DeleteMapping("/{scheduleId}")
     public CourseListResponse deleteCourseSchedule(@PathVariable Integer scheduleId) {
         return courseService.deleteCourseSchedule(scheduleId);
+    }
+
+    @GetMapping("/semesters")
+    public List<SemesterInfo> getSemesters() {
+        return courseService.getDistinctSemesters();
     }
 }

@@ -17,6 +17,9 @@ public class StudentEnrollmentResponse {
         private String courseCode;
         private Double credit;
         private String teacherName;
+        private String teacherTitle;
+        private String teacherDept;
+        private String teacherEmail;
         private String classroom;
         private Integer dayOfWeek;
         private String startTime;

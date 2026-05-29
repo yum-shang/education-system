@@ -6,7 +6,9 @@ import com.example.education.system.courses.model.CourseEnrollment;
 import com.example.education.system.courses.model.CourseSchedule;
 import com.example.education.system.courses.repository.CourseRepository;
 import com.example.education.system.courses.service.CourseEnrollmentService;
+import com.example.education.system.users.dto.AdminEnrollmentRequest;
 import com.example.education.system.users.dto.BatchImportStudentRequest;
+import com.example.education.system.users.dto.BatchImportResultResponse;
 import com.example.education.system.users.dto.CreateStudentRequest;
 import com.example.education.system.users.dto.StudentEnrollmentResponse;
 import com.example.education.system.users.dto.StudentListResponse;
@@ -101,6 +103,13 @@ public class StudentController {
                     Teacher teacher = userRepository.findTeacherById(schedule.getTeacherId());
                     if (teacher != null) {
                         info.setTeacherName(teacher.getName());
+                        info.setTeacherTitle(teacher.getTitle());
+                        info.setTeacherDept(teacher.getDepartment());
+
+                        com.example.education.system.auth.model.User teacherUser = userRepository.findUserById(schedule.getTeacherId());
+                        if (teacherUser != null) {
+                            info.setTeacherEmail(teacherUser.getEmail());
+                        }
                     }
                 }
                 infos.add(info);
@@ -111,7 +120,17 @@ public class StudentController {
     }
 
     @PostMapping("/batch")
-    public StudentListResponse batchImportStudents(@RequestBody BatchImportStudentRequest request) {
+    public BatchImportResultResponse batchImportStudents(@RequestBody BatchImportStudentRequest request) {
         return userService.batchImportStudents(request);
+    }
+
+    @PostMapping("/enrollments")
+    public EnrollmentListResponse adminEnrollStudent(@RequestBody AdminEnrollmentRequest request) {
+        return courseEnrollmentService.adminEnrollStudent(request.getStudentId(), request.getScheduleId());
+    }
+
+    @DeleteMapping("/enrollments/{enrollmentId}")
+    public EnrollmentListResponse adminDropStudent(@PathVariable Integer enrollmentId) {
+        return courseEnrollmentService.adminDropStudent(enrollmentId);
     }
 }

@@ -1,7 +1,11 @@
 package com.example.education.system.courses.service;
 
 import com.example.education.system.courses.dto.CreateEnrollmentRequest;
+import com.example.education.system.courses.dto.EnrollmentInfo;
+import com.example.education.system.courses.dto.EnrollmentInfoListResponse;
 import com.example.education.system.courses.dto.EnrollmentListResponse;
+import com.example.education.system.courses.dto.EnrolledStudentInfo;
+import com.example.education.system.courses.dto.EnrolledStudentListResponse;
 import com.example.education.system.courses.model.CourseEnrollment;
 import com.example.education.system.courses.model.CourseSchedule;
 import com.example.education.system.courses.repository.CourseEnrollmentRepository;
@@ -118,6 +122,22 @@ public class CourseEnrollmentService {
         return response;
     }
 
+    public EnrollmentInfoListResponse getStudentEnrollmentsEnriched(Integer studentId, String semester, Integer year, Integer page, Integer pageSize) {
+        EnrollmentInfoListResponse response = new EnrollmentInfoListResponse();
+
+        int offset = (page - 1) * pageSize;
+        List<EnrollmentInfo> enrollments = courseEnrollmentRepository.findEnrollmentInfoByStudentId(studentId, semester, year, offset, pageSize);
+        Integer total = courseEnrollmentRepository.countEnrollmentInfoByStudentId(studentId, semester, year);
+
+        response.setCode(200);
+        response.setMessage("查询成功");
+        response.setData(enrollments);
+        response.setTotal(total != null ? total : 0);
+        response.setPage(page);
+        response.setPageSize(pageSize);
+        return response;
+    }
+
     public EnrollmentListResponse getCourseEnrollments(Integer scheduleId, Integer page, Integer pageSize) {
         EnrollmentListResponse response = new EnrollmentListResponse();
 
@@ -129,6 +149,49 @@ public class CourseEnrollmentService {
         response.setMessage("查询成功");
         response.setData(enrollments);
         response.setTotal(total);
+        response.setPage(page);
+        response.setPageSize(pageSize);
+        return response;
+    }
+
+    public EnrollmentInfoListResponse getAvailableSchedules(Integer studentId, String semester, Integer year, String keyword, Integer page, Integer pageSize) {
+        EnrollmentInfoListResponse response = new EnrollmentInfoListResponse();
+        int offset = (page - 1) * pageSize;
+        List<EnrollmentInfo> schedules = courseEnrollmentRepository.findAvailableSchedules(studentId, semester, year, keyword, offset, pageSize);
+        Integer total = courseEnrollmentRepository.countAvailableSchedules(studentId, semester, year, keyword);
+        response.setCode(200);
+        response.setMessage("查询成功");
+        response.setData(schedules);
+        response.setTotal(total != null ? total : 0);
+        response.setPage(page);
+        response.setPageSize(pageSize);
+        return response;
+    }
+
+    @Transactional
+    public EnrollmentListResponse adminEnrollStudent(Integer studentId, Integer scheduleId) {
+        CreateEnrollmentRequest req = new CreateEnrollmentRequest();
+        req.setScheduleId(scheduleId);
+        return enrollCourse(studentId, req);
+    }
+
+    public EnrollmentListResponse adminDropStudent(Integer enrollmentId) {
+        EnrollmentListResponse response = new EnrollmentListResponse();
+        courseEnrollmentRepository.deleteEnrollment(enrollmentId);
+        response.setCode(200);
+        response.setMessage("移除学生成功");
+        return response;
+    }
+
+    public EnrolledStudentListResponse getEnrolledStudents(Integer scheduleId, String keyword, Integer page, Integer pageSize) {
+        EnrolledStudentListResponse response = new EnrolledStudentListResponse();
+        int offset = (page - 1) * pageSize;
+        List<EnrolledStudentInfo> students = courseEnrollmentRepository.findEnrolledStudentsByScheduleId(scheduleId, keyword, offset, pageSize);
+        Integer total = courseEnrollmentRepository.countEnrolledStudentsByScheduleId(scheduleId, keyword);
+        response.setCode(200);
+        response.setMessage("查询成功");
+        response.setData(students);
+        response.setTotal(total != null ? total : 0);
         response.setPage(page);
         response.setPageSize(pageSize);
         return response;

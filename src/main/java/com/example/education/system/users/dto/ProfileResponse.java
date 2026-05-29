@@ -25,5 +25,6 @@ public class ProfileResponse {
         private String gender;
         private String title;
         private String bio;
+        private Double totalCredit;
     }
 }
