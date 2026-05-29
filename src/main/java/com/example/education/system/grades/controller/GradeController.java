@@ -146,6 +146,20 @@ class StudentGradeController {
         return gradeService.getStudentGradeTrend(studentId);
     }
 
+    @GetMapping("/report")
+    public void downloadReport(
+            @RequestParam(required = false) String semester,
+            @RequestParam(required = false) Integer year,
+            HttpServletRequest request,
+            HttpServletResponse response) throws IOException {
+        Integer studentId = getCurrentStudentId(request);
+        if (studentId == null) {
+            response.setStatus(401);
+            return;
+        }
+        gradeService.exportStudentGradeReport(studentId, semester, year, response);
+    }
+
     private Integer getCurrentStudentId(HttpServletRequest request) {
         Object userId = request.getAttribute("userId");
         if (userId != null) {

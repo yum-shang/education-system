@@ -159,4 +159,21 @@
     <select id="findGradeByEnrollmentId" resultType="com.example.education.system.grades.model.Grade">
         SELECT * FROM grades WHERE enrollment_id = #{enrollmentId} LIMIT 1
     </select>
+
+    <select id="findStudentGradeReport" resultType="com.example.education.system.grades.dto.StudentGradeReportRow">
+        SELECT c.course_name AS courseName,
+               c.course_code AS courseCode,
+               c.credit,
+               g.score,
+               g.grade_level AS gradeLevel,
+               g.comment
+        FROM grades g
+        JOIN course_enrollments ce ON g.enrollment_id = ce.enrollment_id
+        JOIN course_schedules cs ON ce.schedule_id = cs.schedule_id
+        JOIN courses c ON cs.course_id = c.course_id
+        WHERE ce.student_id = #{studentId}
+          AND cs.semester = #{semester}
+          AND cs.year = #{year}
+        ORDER BY c.course_code
+    </select>
 </mapper>

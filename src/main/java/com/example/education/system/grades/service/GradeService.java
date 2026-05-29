@@ -7,6 +7,7 @@ import com.example.education.system.grades.dto.GradeListResponse;
 import com.example.education.system.grades.dto.GradeReportRow;
 import com.example.education.system.grades.dto.GradeStats;
 import com.example.education.system.grades.dto.GradeTrendItem;
+import com.example.education.system.grades.dto.StudentGradeReportRow;
 import com.example.education.system.grades.model.Grade;
 import com.example.education.system.grades.repository.GradeRepository;
 import org.apache.poi.ss.usermodel.Row;
@@ -297,6 +298,46 @@ public class GradeService {
         result.setFailCount(total - successCount);
         result.setErrors(errors);
         return result;
+    }
+
+    public void exportStudentGradeReport(Integer studentId, String semester, Integer year, HttpServletResponse response) throws IOException {
+        List<StudentGradeReportRow> rows = gradeRepository.findStudentGradeReport(studentId, semester, year);
+
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("成绩报表");
+
+        Row headerRow = sheet.createRow(0);
+        headerRow.createCell(0).setCellValue("课程名称");
+        headerRow.createCell(1).setCellValue("课程编号");
+        headerRow.createCell(2).setCellValue("学分");
+        headerRow.createCell(3).setCellValue("分数");
+        headerRow.createCell(4).setCellValue("等级");
+        headerRow.createCell(5).setCellValue("评语");
+
+        int rowIndex = 1;
+        for (StudentGradeReportRow row : rows) {
+            Row dataRow = sheet.createRow(rowIndex++);
+            dataRow.createCell(0).setCellValue(row.getCourseName() != null ? row.getCourseName() : "");
+            dataRow.createCell(1).setCellValue(row.getCourseCode() != null ? row.getCourseCode() : "");
+            dataRow.createCell(2).setCellValue(row.getCredit() != null ? row.getCredit().doubleValue() : 0.0);
+            dataRow.createCell(3).setCellValue(row.getScore() != null ? row.getScore().doubleValue() : 0.0);
+            dataRow.createCell(4).setCellValue(row.getGradeLevel() != null ? row.getGradeLevel() : "");
+            dataRow.createCell(5).setCellValue(row.getComment() != null ? row.getComment() : "");
+        }
+
+        for (int i = 0; i < 6; i++) {
+            sheet.autoSizeColumn(i);
+        }
+
+        String fileName = "学生成绩报表.xlsx";
+        String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8).replaceAll("\\+", "%20");
+
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader("Content-Disposition", "attachment; filename*=UTF-8''" + encodedFileName);
+        response.setHeader("Access-Control-Expose-Headers", "Content-Disposition");
+
+        workbook.write(response.getOutputStream());
+        workbook.close();
     }
 
     private String getGradeLevel(double score) {
