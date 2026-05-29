@@ -1,5 +1,6 @@
 package com.example.education.system.grades.repository;
 
+import com.example.education.system.grades.dto.EnrolledStudentTemplateRow;
 import com.example.education.system.grades.dto.GradeListResponse;
 import com.example.education.system.grades.dto.GradeReportRow;
 import com.example.education.system.grades.dto.GradeStats;
@@ -27,4 +28,8 @@ public interface GradeRepository {
     Integer countGradeInfoByStudentId(@Param("studentId") Integer studentId, @Param("semester") String semester, @Param("year") Integer year);
 
     List<GradeTrendItem> avgScoreBySemester(@Param("studentId") Integer studentId);
+
+    List<EnrolledStudentTemplateRow> findEnrolledStudentsByScheduleId(@Param("scheduleId") Integer scheduleId);
+
+    Grade findGradeByEnrollmentId(@Param("enrollmentId") Integer enrollmentId);
 }

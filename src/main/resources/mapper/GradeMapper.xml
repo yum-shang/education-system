@@ -141,4 +141,22 @@
         GROUP BY cs.year, cs.semester
         ORDER BY cs.year DESC, cs.semester DESC
     </select>
+
+    <select id="findEnrolledStudentsByScheduleId" resultType="com.example.education.system.grades.dto.EnrolledStudentTemplateRow">
+        SELECT ce.enrollment_id AS enrollmentId,
+               s.name AS studentName,
+               s.student_number AS studentNumber,
+               g.score,
+               g.grade_level AS gradeLevel,
+               g.comment
+        FROM course_enrollments ce
+        JOIN students s ON ce.student_id = s.student_id
+        LEFT JOIN grades g ON ce.enrollment_id = g.enrollment_id
+        WHERE ce.schedule_id = #{scheduleId}
+        ORDER BY s.student_number
+    </select>
+
+    <select id="findGradeByEnrollmentId" resultType="com.example.education.system.grades.model.Grade">
+        SELECT * FROM grades WHERE enrollment_id = #{enrollmentId} LIMIT 1
+    </select>
 </mapper>

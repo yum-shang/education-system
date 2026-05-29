@@ -1,12 +1,14 @@
 package com.example.education.system.grades.controller;
 
 import com.example.education.system.grades.dto.CreateGradeRequest;
+import com.example.education.system.grades.dto.GradeBatchResponse;
 import com.example.education.system.grades.dto.GradeListResponse;
 import com.example.education.system.grades.service.GradeService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 
@@ -73,6 +75,38 @@ class TeacherGradeController {
     public GradeListResponse getTeacherGradeStats(
             @RequestParam Integer scheduleId) {
         return gradeService.getTeacherGradeStats(scheduleId);
+    }
+
+    @GetMapping("/template")
+    public void downloadTemplate(
+            @RequestParam Integer scheduleId,
+            HttpServletResponse response) throws IOException {
+        gradeService.exportGradeTemplate(scheduleId, response);
+    }
+
+    @PostMapping("/batch")
+    public GradeBatchResponse batchImport(
+            @RequestParam Integer scheduleId,
+            @RequestParam("file") MultipartFile file,
+            HttpServletRequest httpRequest) throws IOException {
+        Integer teacherId = getCurrentTeacherId(httpRequest);
+        if (teacherId == null) {
+            GradeBatchResponse response = new GradeBatchResponse();
+            response.setTotal(0);
+            response.setSuccessCount(0);
+            response.setFailCount(0);
+            response.setErrors(java.util.Collections.singletonList("未登录或登录已过期"));
+            return response;
+        }
+        return gradeService.batchImportGrades(scheduleId, teacherId, file);
+    }
+
+    private Integer getCurrentTeacherId(HttpServletRequest request) {
+        Object userId = request.getAttribute("userId");
+        if (userId != null) {
+            return (Integer) userId;
+        }
+        return null;
     }
 }
 
