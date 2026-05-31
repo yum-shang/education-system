@@ -15,7 +15,30 @@
         <if test="leaderId != null">
             AND leader_id = #{leaderId}
         </if>
+        <if test="keyword != null and keyword != ''">
+            AND team_name LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        ORDER BY created_at DESC
         LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countTeams" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM innovation_teams
+        WHERE 1=1
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        <if test="leaderId != null">
+            AND leader_id = #{leaderId}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND team_name LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+    </select>
+
+    <select id="findTeamLeaderName" resultType="java.lang.String">
+        SELECT s.name FROM students s
+        WHERE s.student_id = #{leaderId}
     </select>
 
     <select id="findTeamById" resultType="com.example.education.system.innovation.model.InnovationTeam">
@@ -25,6 +48,25 @@
     <select id="findTeamByName" resultType="com.example.education.system.innovation.model.InnovationTeam">
         SELECT * FROM innovation_teams WHERE team_name = #{teamName} LIMIT 1
     </select>
+
+    <update id="updateTeam">
+        UPDATE innovation_teams
+        <set>
+            <if test="teamName != null and teamName != ''">
+                team_name = #{teamName},
+            </if>
+            <if test="projectName != null">
+                project_name = #{projectName},
+            </if>
+            <if test="description != null">
+                description = #{description},
+            </if>
+            <if test="status != null and status != ''">
+                status = #{status},
+            </if>
+        </set>
+        WHERE team_id = #{teamId}
+    </update>
 
     <insert id="insertTeamApplication" parameterType="com.example.education.system.innovation.model.TeamApplication">
         INSERT INTO team_applications (team_id, student_id, application_letter, status, apply_time)
@@ -48,6 +90,53 @@
             AND status = #{status}
         </if>
         LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="findTeamApplicationsWithInfo" resultType="com.example.education.system.innovation.dto.ApplicationListResponse$ApplicationInfo">
+        SELECT
+            ta.application_id AS applicationId,
+            ta.team_id AS teamId,
+            it.team_name AS teamName,
+            ta.student_id AS studentId,
+            s.name AS studentName,
+            s.student_number AS studentNumber,
+            ta.application_letter AS applicationLetter,
+            ta.status,
+            ta.apply_time AS applyTime,
+            ta.review_time AS reviewTime
+        FROM team_applications ta
+        JOIN innovation_teams it ON ta.team_id = it.team_id
+        JOIN students s ON ta.student_id = s.student_id
+        WHERE 1=1
+        <if test="teamId != null">
+            AND ta.team_id = #{teamId}
+        </if>
+        <if test="studentId != null">
+            AND ta.student_id = #{studentId}
+        </if>
+        <if test="status != null and status != ''">
+            AND ta.status = #{status}
+        </if>
+        ORDER BY ta.apply_time DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countTeamApplications" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM team_applications
+        WHERE 1=1
+        <if test="teamId != null">
+            AND team_id = #{teamId}
+        </if>
+        <if test="studentId != null">
+            AND student_id = #{studentId}
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+    </select>
+
+    <select id="findTeamApplicationById" resultType="com.example.education.system.innovation.model.TeamApplication">
+        SELECT * FROM team_applications WHERE application_id = #{applicationId}
     </select>
 
     <select id="findTeamApplicationByTeamAndStudent" resultType="com.example.education.system.innovation.model.TeamApplication">
