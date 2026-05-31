@@ -15,7 +15,29 @@
         <if test="teacherId != null">
             AND teacher_id = #{teacherId}
         </if>
+        <if test="keyword != null and keyword != ''">
+            AND project_name LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        ORDER BY created_at DESC
         LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countProjects" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM research_projects
+        WHERE 1=1
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        <if test="teacherId != null">
+            AND teacher_id = #{teacherId}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND project_name LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+    </select>
+
+    <select id="findProjectTeacherName" resultType="java.lang.String">
+        SELECT t.name FROM teachers t WHERE t.teacher_id = #{teacherId}
     </select>
 
     <select id="findProjectById" resultType="com.example.education.system.research.model.ResearchProject">
@@ -33,6 +55,20 @@
         review_time = #{reviewTime}
         WHERE application_id = #{applicationId}
     </update>
+
+    <delete id="deleteApplication">
+        DELETE FROM project_applications WHERE application_id = #{applicationId}
+    </delete>
+
+    <select id="findApplicationById" resultType="com.example.education.system.research.model.ProjectApplication">
+        SELECT * FROM project_applications WHERE application_id = #{applicationId}
+    </select>
+
+    <select id="findApplicationByProjectAndStudent" resultType="com.example.education.system.research.model.ProjectApplication">
+        SELECT * FROM project_applications
+        WHERE project_id = #{projectId} AND student_id = #{studentId}
+        ORDER BY apply_time DESC LIMIT 1
+    </select>
 
     <update id="updateProjectStatus">
         UPDATE research_projects SET
@@ -75,10 +111,34 @@
         <if test="projectId != null">
             AND pa.project_id = #{projectId}
         </if>
+        <if test="studentId != null">
+            AND pa.student_id = #{studentId}
+        </if>
+        <if test="teacherId != null">
+            AND rp.teacher_id = #{teacherId}
+        </if>
         <if test="status != null and status != ''">
             AND pa.status = #{status}
         </if>
         ORDER BY pa.apply_time DESC
         LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countApplications" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM project_applications pa
+        LEFT JOIN research_projects rp ON pa.project_id = rp.project_id
+        WHERE 1=1
+        <if test="projectId != null">
+            AND pa.project_id = #{projectId}
+        </if>
+        <if test="studentId != null">
+            AND pa.student_id = #{studentId}
+        </if>
+        <if test="teacherId != null">
+            AND rp.teacher_id = #{teacherId}
+        </if>
+        <if test="status != null and status != ''">
+            AND pa.status = #{status}
+        </if>
     </select>
 </mapper>

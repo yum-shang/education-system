@@ -11,18 +11,43 @@ import java.util.List;
 @Mapper
 public interface ResearchRepository {
     void insertProject(ResearchProject project);
-    List<ResearchProject> findProjects(@Param("status") String status, @Param("teacherId") Integer teacherId, @Param("offset") Integer offset, @Param("limit") Integer limit);
+
+    List<ResearchProject> findProjects(@Param("status") String status, @Param("teacherId") Integer teacherId,
+            @Param("keyword") String keyword, @Param("offset") Integer offset, @Param("limit") Integer limit);
+
+    int countProjects(@Param("status") String status, @Param("teacherId") Integer teacherId,
+            @Param("keyword") String keyword);
+
+    String findProjectTeacherName(@Param("teacherId") Integer teacherId);
+
     ResearchProject findProjectById(@Param("projectId") Integer projectId);
 
     void insertApplication(ProjectApplication application);
-    void updateApplicationStatus(@Param("applicationId") Integer applicationId, @Param("status") String status, @Param("reviewTime") java.sql.Timestamp reviewTime);
-    //修改项目状态
-    void updateProjectStatus(@Param("projectId") Integer projectId, @Param("status") String status, @Param("createdAt") java.sql.Timestamp createdAt);
-    List<ProjectApplication> findApplications(@Param("projectId") Integer projectId, @Param("status") String status, @Param("offset") Integer offset, @Param("limit") Integer limit);
-    
+
+    void updateApplicationStatus(@Param("applicationId") Integer applicationId, @Param("status") String status,
+            @Param("reviewTime") java.sql.Timestamp reviewTime);
+
+    void deleteApplication(@Param("applicationId") Integer applicationId);
+
+    ProjectApplication findApplicationById(@Param("applicationId") Integer applicationId);
+
+    ProjectApplication findApplicationByProjectAndStudent(@Param("projectId") Integer projectId,
+            @Param("studentId") Integer studentId);
+
+    void updateProjectStatus(@Param("projectId") Integer projectId, @Param("status") String status,
+            @Param("createdAt") java.sql.Timestamp createdAt);
+
+    List<ProjectApplication> findApplications(@Param("projectId") Integer projectId, @Param("status") String status,
+            @Param("offset") Integer offset, @Param("limit") Integer limit);
+
     List<ApplicationWithStudent> findApplicationsWithStudent(
-            @Param("projectId") Integer projectId, 
-            @Param("status") String status, 
-            @Param("offset") Integer offset, 
+            @Param("projectId") Integer projectId,
+            @Param("studentId") Integer studentId,
+            @Param("teacherId") Integer teacherId,
+            @Param("status") String status,
+            @Param("offset") Integer offset,
             @Param("limit") Integer limit);
+
+    int countApplications(@Param("projectId") Integer projectId, @Param("studentId") Integer studentId,
+            @Param("teacherId") Integer teacherId, @Param("status") String status);
 }

@@ -1,12 +1,12 @@
 package com.example.education.system.research.service;
 
-import com.example.education.system.research.dto.CreateProjectRequest;
-import com.example.education.system.research.dto.ProjectListResponse;
-import com.example.education.system.research.dto.ProjectApplicationRequest;
 import com.example.education.system.research.dto.ApplicationListResponse;
-import com.example.education.system.research.model.ResearchProject;
-import com.example.education.system.research.model.ProjectApplication;
+import com.example.education.system.research.dto.CreateProjectRequest;
+import com.example.education.system.research.dto.ProjectApplicationRequest;
+import com.example.education.system.research.dto.ProjectListResponse;
 import com.example.education.system.research.model.ApplicationWithStudent;
+import com.example.education.system.research.model.ProjectApplication;
+import com.example.education.system.research.model.ResearchProject;
 import com.example.education.system.research.repository.ResearchRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,16 +17,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-/**
- * 科研项目服务
- * 
- * 负责科研项目的发布和申请管理，包括：
- * - 教师发布科研项目
- * - 学生申请科研项目
- * - 教师审核项目申请
- * - 科研项目列表查询
- * - 项目申请列表查询
- */
 @Service
 public class ResearchService {
 
@@ -49,20 +39,14 @@ public class ResearchService {
         ProjectListResponse response = new ProjectListResponse();
         response.setCode(200);
         response.setMessage("项目发布成功");
-
-        ProjectListResponse.Data data = new ProjectListResponse.Data();
-        data.setList(new ArrayList<>());
-        data.setTotal(0);
-        data.setPage(1);
-        data.setPageSize(10);
-
-        response.setData(data);
         return response;
     }
 
-    public ProjectListResponse getProjectList(String status, Integer teacherId, Integer page, Integer pageSize) {
+    public ProjectListResponse getProjectList(String status, Integer teacherId, String keyword, Integer page,
+            Integer pageSize) {
         int offset = (page - 1) * pageSize;
-        List<ResearchProject> projects = researchRepository.findProjects(status, teacherId, offset, pageSize);
+        List<ResearchProject> projects = researchRepository.findProjects(status, teacherId, keyword, offset, pageSize);
+        int total = researchRepository.countProjects(status, teacherId, keyword);
 
         ProjectListResponse response = new ProjectListResponse();
         response.setCode(200);
@@ -81,20 +65,57 @@ public class ResearchService {
             info.setStartDate(project.getStartDate().toString());
             info.setEndDate(project.getEndDate().toString());
             info.setCreatedAt(project.getCreatedAt().toString());
+
+            String teacherName = researchRepository.findProjectTeacherName(project.getTeacherId());
+            info.setTeacherName(teacherName != null ? teacherName : "未知");
             projectInfos.add(info);
         }
 
         data.setList(projectInfos);
-        data.setTotal(0); // 实际应该查询总数
+        data.setTotal(total);
         data.setPage(page);
         data.setPageSize(pageSize);
-
         response.setData(data);
         return response;
     }
 
     @Transactional
     public ProjectListResponse applyProject(ProjectApplicationRequest request, Integer studentId) {
+        ProjectListResponse response = new ProjectListResponse();
+
+        ResearchProject project = researchRepository.findProjectById(request.getProjectId());
+        if (project == null) {
+            response.setCode(404);
+            response.setMessage("项目不存在");
+            return response;
+        }
+
+        if (!"open".equals(project.getStatus())) {
+            response.setCode(400);
+            response.setMessage("该项目已关闭，无法申请");
+            return response;
+        }
+
+        ProjectApplication existing = researchRepository.findApplicationByProjectAndStudent(request.getProjectId(),
+                studentId);
+        if (existing != null) {
+            if ("pending".equals(existing.getStatus())) {
+                response.setCode(400);
+                response.setMessage("你已提交过申请，请等待审核");
+                return response;
+            }
+            if ("approved".equals(existing.getStatus())) {
+                response.setCode(400);
+                response.setMessage("你已被该项目录取，无需重复申请");
+                return response;
+            }
+            if ("rejected".equals(existing.getStatus())) {
+                response.setCode(400);
+                response.setMessage("你的申请已被拒绝，无法重复申请");
+                return response;
+            }
+        }
+
         ProjectApplication application = new ProjectApplication();
         application.setProjectId(request.getProjectId());
         application.setStudentId(studentId);
@@ -104,33 +125,67 @@ public class ResearchService {
 
         researchRepository.insertApplication(application);
 
-        ProjectListResponse response = new ProjectListResponse();
         response.setCode(200);
-        response.setMessage("申请成功");
-
-        ProjectListResponse.Data data = new ProjectListResponse.Data();
-        data.setList(new ArrayList<>());
-        data.setTotal(0);
-        data.setPage(1);
-        data.setPageSize(10);
-
-        response.setData(data);
+        response.setMessage("申请提交成功");
         return response;
     }
 
     @Transactional
-    public ProjectListResponse reviewApplication(Integer applicationId, String status) {
-        researchRepository.updateApplicationStatus(applicationId, status, new Timestamp(new Date().getTime()));
-
+    public ProjectListResponse reviewApplication(Integer applicationId, String status, Integer userId) {
         ProjectListResponse response = new ProjectListResponse();
+
+        ProjectApplication targetApp = researchRepository.findApplicationById(applicationId);
+        if (targetApp == null) {
+            response.setCode(404);
+            response.setMessage("申请不存在");
+            return response;
+        }
+
+        ResearchProject project = researchRepository.findProjectById(targetApp.getProjectId());
+        if (project == null || !project.getTeacherId().equals(userId)) {
+            response.setCode(403);
+            response.setMessage("只有项目负责教师才能审核申请");
+            return response;
+        }
+
+        researchRepository.updateApplicationStatus(applicationId, status,
+                new Timestamp(new Date().getTime()));
+
         response.setCode(200);
         response.setMessage("审核成功");
         return response;
     }
 
-    public ApplicationListResponse getApplicationList(Integer projectId, String status, Integer page, Integer pageSize) {
+    @Transactional
+    public ProjectListResponse cancelApplication(Integer applicationId, Integer userId) {
+        ProjectListResponse response = new ProjectListResponse();
+
+        ProjectApplication targetApp = researchRepository.findApplicationById(applicationId);
+        if (targetApp == null) {
+            response.setCode(404);
+            response.setMessage("申请不存在");
+            return response;
+        }
+
+        if (!targetApp.getStudentId().equals(userId)) {
+            response.setCode(403);
+            response.setMessage("只能取消自己的申请");
+            return response;
+        }
+
+        researchRepository.deleteApplication(applicationId);
+
+        response.setCode(200);
+        response.setMessage("报名已取消");
+        return response;
+    }
+
+    public ApplicationListResponse getApplicationList(Integer projectId, Integer studentId, Integer teacherId,
+            String status, Integer page, Integer pageSize) {
         int offset = (page - 1) * pageSize;
-        List<ApplicationWithStudent> applications = researchRepository.findApplicationsWithStudent(projectId, status, offset, pageSize);
+        List<ApplicationWithStudent> applications = researchRepository.findApplicationsWithStudent(projectId, studentId,
+                teacherId, status, offset, pageSize);
+        int total = researchRepository.countApplications(projectId, studentId, teacherId, status);
 
         ApplicationListResponse response = new ApplicationListResponse();
         response.setCode(200);
@@ -158,10 +213,9 @@ public class ResearchService {
         }
 
         data.setList(applicationInfos);
-        data.setTotal(0); // 实际应该查询总数
+        data.setTotal(total);
         data.setPage(page);
         data.setPageSize(pageSize);
-
         response.setData(data);
         return response;
     }
@@ -169,20 +223,29 @@ public class ResearchService {
     @Transactional
     public ProjectListResponse updateProject(Integer projectId, String status) {
         if (projectId == null) {
-            throw new IllegalArgumentException("项目ID不能为空");
+            ProjectListResponse response = new ProjectListResponse();
+            response.setCode(400);
+            response.setMessage("项目ID不能为空");
+            return response;
         }
-        
+
         if (status == null || status.isEmpty()) {
-            throw new IllegalArgumentException("状态不能为空");
+            ProjectListResponse response = new ProjectListResponse();
+            response.setCode(400);
+            response.setMessage("状态不能为空");
+            return response;
         }
-        
+
         ResearchProject project = researchRepository.findProjectById(projectId);
         if (project == null) {
-            throw new IllegalArgumentException("项目不存在");
+            ProjectListResponse response = new ProjectListResponse();
+            response.setCode(404);
+            response.setMessage("项目不存在");
+            return response;
         }
-        
+
         researchRepository.updateProjectStatus(projectId, status, new Timestamp(new Date().getTime()));
-        
+
         ProjectListResponse response = new ProjectListResponse();
         response.setCode(200);
         response.setMessage("项目状态更新成功");
