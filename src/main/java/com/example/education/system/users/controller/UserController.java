@@ -2,6 +2,7 @@ package com.example.education.system.users.controller;
 
 import com.example.education.system.users.dto.UserListResponse;
 import com.example.education.system.users.dto.ProfileResponse;
+import com.example.education.system.users.dto.ChangePasswordRequest;
 import com.example.education.system.users.service.UserService;
 import com.example.education.system.auth.service.JwtService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,7 +58,7 @@ public class UserController {
     @PutMapping("/{userId}/password")
     public UserListResponse updateUserPassword(
             @PathVariable Integer userId,
-            @RequestParam String newPassword) {
+            @RequestBody ChangePasswordRequest request) {
         // 检查权限，只有管理员或用户自己可以修改密码
         Integer currentUserId = getUserIdFromToken();
         String currentRole = getRoleFromToken();
@@ -69,7 +70,7 @@ public class UserController {
             return response;
         }
         
-        userService.updateUserPassword(userId, newPassword);
+        userService.updateUserPassword(userId, request.getNewPassword());
         UserListResponse response = new UserListResponse();
         response.setCode(200);
         response.setMessage("密码修改成功");
