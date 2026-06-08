@@ -1,0 +1,68 @@
+# App
+spring:
+  application:
+    name: education-system
+  # Database
+  datasource:
+    url: jdbc:mysql://localhost:3306/education_system
+    username: root
+    password:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  # Security
+  security:
+    user:
+      name: admin
+      password: admin
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+  # AI - DeepSeek API
+  ai:
+    openai:
+      api-key: ${DEEPSEEK_API_KEY:your-deepseek-api-key}
+      base-url: https://api.deepseek.com
+      chat:
+        options:
+          model: deepseek-chat
+
+# MyBatis
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.example.education.system.*.model
+  configuration:
+    map-underscore-to-camel-case: true
+
+# Server
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+# JWT
+jwt:
+  secret: education_system_secret_key_for_jwt_token_generation_2024_secure
+  expiration: 86400000
+
+# File upload
+file:
+  upload:
+    path: ./uploads/images
+
+# Report storage
+report:
+  storage:
+    path: ./uploads/reports
+
+# Logging
+logging:
+  level:
+    com.example.education.system: info
+
+# AI - 全局切换: deepseek | vllm
+ai:
+  active: deepseek
+  vllm:
+    base-url: http://localhost:8000/v1
+    api-key: not-needed
+    model: default
