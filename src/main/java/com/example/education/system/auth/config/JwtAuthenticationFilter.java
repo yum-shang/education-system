@@ -30,7 +30,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
         String path = request.getRequestURI();
-        
+
+        //放行的接口
         if (path.startsWith("/api/auth/") || path.startsWith("/api/schedule/")) {
             chain.doFilter(request, response);
             return;
@@ -52,7 +53,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 
                 logger.debug("JWT解析成功 - userId: {}, role: {}", userId, role);
             } catch (Exception e) {
-                logger.error("Invalid JWT token: {}", e.getMessage());
+                logger.error("Invalid JWT token JWT 解析失败: {}", e.getMessage());
             }
         }
 
