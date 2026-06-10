@@ -6,12 +6,13 @@
 
 ## 技术栈
 
-- **框架**: Spring Boot 3.2.0
+- **框架**: Spring Boot 3.3.5
 - **构建工具**: Maven
 - **数据库**: MySQL
 - **ORM**: MyBatis
 - **认证**: JWT
 - **安全**: Spring Security
+- **AI**: Spring AI 1.0.0-M6, DeepSeek API, vLLM（可选本地部署）
 - **其他**: Lombok, Commons IO
 
 ## 项目结构
@@ -32,6 +33,7 @@ education-system/
 │   │   │   ├── reports/       # 报表统计模块
 │   │   │   ├── search/        # 查询检索模块
 │   │   │   ├── schedule/      # 排课模块
+│   │   │   ├── ai/            # AI对话模块
 │   │   │   └── EducationSystemApplication.java  # 应用主类
 │   │   └── resources/         # 资源文件目录
 │   │       ├── application.properties  # 应用配置文件
@@ -179,6 +181,99 @@ java -jar target/education-system-0.0.1-SNAPSHOT.jar
 | 接口名称 | 请求方法 | 请求路径 | 说明 | 权限 |
 |---------|---------|---------|------|------|
 | 通用搜索 | GET | /api/search | 通用搜索接口 | 登录用户 |
+
+### AI 对话模块
+
+| 接口名称 | 请求方法 | 请求路径 | 说明 | 权限 |
+|---------|---------|---------|------|------|
+| 获取热门问题 | GET | /api/session/hot | 获取首页热门提问示例 | 登录用户 |
+| AI 对话（SSE 流式） | POST | /api/chat | 发送消息并接收 AI 流式回复 | 登录用户 |
+
+**SSE 事件格式**：
+
+每个事件为一行 `data:` + JSON，以 `\n\n` 结尾：
+
+```
+data:{"eventData":"你好","eventType":1001}
+data:{"eventData":"！","eventType":1001}
+data:{"eventData":"","eventType":1002}
+```
+
+| eventType | 含义 |
+|-----------|------|
+| 1001 | AI 回复的文本片段（流式推送） |
+| 1002 | 流结束标记（单次回复完成） |
+
+**AI 对话测试**：
+
+1. 先登录获取 token：`POST /api/auth/login`
+2. 调用对话接口，携带 `Authorization: Bearer {token}` 头：
+
+```
+POST /api/chat
+Content-Type: application/json
+
+{"question": "你好，请介绍一下自己", "sessionId": "test-session-001"}
+```
+
+3. 响应为 `text/event-stream` 流，前端需使用 EventSource 或 fetch + ReadableStream 解析。
+
+---
+
+## 提示词配置与热加载
+
+系统提示词支持 **外部文件 + 热加载**，无需重启即可修改 AI 行为。
+
+### 文件位置
+
+| 场景 | 路径 | 说明 |
+|------|------|------|
+| 默认（classpath） | `resources/prompts/system-prompt.txt` | 打包在 JAR 内，开发时直接编辑重启生效 |
+| 外部文件（生产） | 由环境变量 `AI_PROMPT_PATH` 指定 | 修改文件后约 300ms 自动生效，无需重启 |
+
+### 使用方式
+
+**开发环境**：直接编辑 `src/main/resources/prompts/system-prompt.txt`，重启应用。
+
+**生产环境**：
+
+```bash
+# 1. 准备外部提示词文件
+sudo mkdir -p /etc/education-system
+sudo vim /etc/education-system/prompt.txt
+
+# 2. 设置环境变量启动
+export AI_PROMPT_PATH=/etc/education-system/prompt.txt
+java -jar education-system.jar
+
+# 3. 在线修改提示词（无需重启）
+vim /etc/education-system/prompt.txt
+# 保存后日志输出：检测到提示词文件变更，重新加载
+```
+
+### 实现原理
+
+```
+PromptProvider (@Component)
+├── 启动时加载提示词到 AtomicReference<String>
+├── 若配置了外部路径 → 启动 WatchService 守护线程监听文件变更
+├── 检测到 ENTRY_MODIFY 事件 → 延迟 300ms → 重新读取 → 更新 AtomicReference
+└── 每次请求调用 promptProvider.get() 获取最新值
+```
+
+- `AtomicReference` 保证读写线程安全
+- `WatchService` 是 JDK 内置 API，零额外依赖
+- 仅外部文件支持热加载（classpath 内文件打包在 JAR 中无法监听）
+
+### application.yml 配置
+
+```yaml
+ai:
+  prompt:
+    path: ${AI_PROMPT_PATH:}   # 为空则使用 classpath 默认文件
+```
+
+---
 
 ## 用户管理模块详解
 

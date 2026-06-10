@@ -23,6 +23,11 @@ public class CourseController {
         return courseService.createCourse(request);
     }
 
+    @GetMapping("/{courseId}")
+    public CourseListResponse getCourseById(@PathVariable Integer courseId) {
+        return courseService.getCourseById(courseId);
+    }
+
     @GetMapping
     public CourseListResponse getCourseList(
             @RequestParam(required = false) String courseName,

@@ -9,11 +9,18 @@
     <select id="findCourses" resultType="com.example.education.system.courses.model.Course">
         SELECT * FROM courses
         WHERE 1=1
-        <if test="courseName != null and courseName != ''">
-            AND course_name LIKE CONCAT('%', #{courseName}, '%')
-        </if>
-        <if test="courseCode != null and courseCode != ''">
-            AND course_code LIKE CONCAT('%', #{courseCode}, '%')
+        <if test="(courseName != null and courseName != '') or (courseCode != null and courseCode != '')">
+            AND (
+            <if test="courseName != null and courseName != ''">
+                course_name LIKE CONCAT('%', #{courseName}, '%')
+            </if>
+            <if test="courseName != null and courseName != '' and courseCode != null and courseCode != ''">
+                OR
+            </if>
+            <if test="courseCode != null and courseCode != ''">
+                course_code LIKE CONCAT('%', #{courseCode}, '%')
+            </if>
+            )
         </if>
         LIMIT #{limit} OFFSET #{offset}
     </select>
@@ -98,11 +105,18 @@
     <select id="countCourses" resultType="java.lang.Integer">
         SELECT COUNT(*) FROM courses
         WHERE 1=1
-        <if test="courseName != null and courseName != ''">
-            AND course_name LIKE CONCAT('%', #{courseName}, '%')
-        </if>
-        <if test="courseCode != null and courseCode != ''">
-            AND course_code LIKE CONCAT('%', #{courseCode}, '%')
+        <if test="(courseName != null and courseName != '') or (courseCode != null and courseCode != '')">
+            AND (
+            <if test="courseName != null and courseName != ''">
+                course_name LIKE CONCAT('%', #{courseName}, '%')
+            </if>
+            <if test="courseName != null and courseName != '' and courseCode != null and courseCode != ''">
+                OR
+            </if>
+            <if test="courseCode != null and courseCode != ''">
+                course_code LIKE CONCAT('%', #{courseCode}, '%')
+            </if>
+            )
         </if>
     </select>
 

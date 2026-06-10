@@ -42,6 +42,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers("/auth/**").permitAll()
                 .requestMatchers("/schedule/**").permitAll()
+                .requestMatchers("/error").permitAll()
                 .requestMatchers("/images/*/view").permitAll()
                 .requestMatchers("/users/profile").authenticated()
                 .requestMatchers("/users/*/password").authenticated()
@@ -74,6 +75,8 @@ public class SecurityConfig {
                 .requestMatchers("/reports/**").hasAnyRole("teacher", "admin")
                 .requestMatchers("/dashboard/**").hasRole("admin")
                 .requestMatchers("/search/**").authenticated()
+                .requestMatchers("/session/**").authenticated()
+                .requestMatchers("/chat/**").authenticated()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);

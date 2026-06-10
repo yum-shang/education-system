@@ -57,6 +57,35 @@ public class CourseService {
         return response;
     }
 
+    public CourseListResponse getCourseById(Integer courseId) {
+        Course course = courseRepository.findCourseById(courseId);
+        CourseListResponse response = new CourseListResponse();
+
+        if (course == null) {
+            response.setCode(404);
+            response.setMessage("课程不存在");
+            return response;
+        }
+
+        CourseListResponse.CourseInfo info = new CourseListResponse.CourseInfo();
+        info.setCourseId(course.getCourseId());
+        info.setCourseName(course.getCourseName());
+        info.setCredit(course.getCredit());
+        info.setCourseCode(course.getCourseCode());
+        info.setDescription(course.getDescription());
+
+        CourseListResponse.Data data = new CourseListResponse.Data();
+        data.setList(List.of(info));
+        data.setTotal(1);
+        data.setPage(1);
+        data.setPageSize(1);
+
+        response.setCode(200);
+        response.setMessage("获取成功");
+        response.setData(data);
+        return response;
+    }
+
     public CourseListResponse getCourseList(String courseName, String courseCode, Integer page, Integer pageSize) {
         int offset = (page - 1) * pageSize;
         List<Course> courses = courseRepository.findCourses(courseName, courseCode, offset, pageSize);
