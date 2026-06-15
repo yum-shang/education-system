@@ -37,7 +37,7 @@ public interface ReportRepository {
             "FROM grades g " +
             "JOIN course_enrollments ce ON g.enrollment_id = ce.enrollment_id " +
             "JOIN course_schedules cs ON ce.schedule_id = cs.schedule_id " +
-            "JOIN students s ON ce.student_id = s.student_id " +
+            "JOIN students s ON ce.student_id = s.user_id " +
             "WHERE cs.semester = #{semester} AND cs.year = #{year} AND cs.course_id = #{courseId} " +
             "ORDER BY s.student_number")
     List<GradeReportRow> findGradeReportData(@Param("semester") String semester,

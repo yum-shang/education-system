@@ -55,7 +55,7 @@
 
     <select id="findStudents" resultMap="StudentResultMap">
         SELECT s.* FROM students s
-        INNER JOIN users u ON s.student_id = u.user_id
+        INNER JOIN users u ON s.user_id = u.user_id
         WHERE 1=1
         <if test="keyword != null and keyword != ''">
             AND (s.name LIKE CONCAT('%', #{keyword}, '%') OR u.username LIKE CONCAT('%', #{keyword}, '%') OR u.email LIKE CONCAT('%', #{keyword}, '%'))
@@ -71,7 +71,7 @@
 
     <select id="countStudents" resultType="java.lang.Integer">
         SELECT COUNT(*) FROM students s
-        INNER JOIN users u ON s.student_id = u.user_id
+        INNER JOIN users u ON s.user_id = u.user_id
         WHERE 1=1
         <if test="keyword != null and keyword != ''">
             AND (s.name LIKE CONCAT('%', #{keyword}, '%') OR u.username LIKE CONCAT('%', #{keyword}, '%') OR u.email LIKE CONCAT('%', #{keyword}, '%'))
@@ -108,13 +108,26 @@
         SELECT * FROM students WHERE student_id = #{studentId}
     </select>
 
-    <insert id="insertStudent" parameterType="com.example.education.system.users.model.Student">
-        INSERT INTO students (student_id, name, student_number, major, grade, class, department, gender)
-        VALUES (#{studentId}, #{name}, #{studentNumber}, #{major}, #{grade}, #{clazz}, #{department}, #{gender})
+    <select id="findStudentByUserId" resultMap="StudentResultMap">
+        SELECT * FROM students WHERE user_id = #{userId}
+    </select>
+
+    <select id="findStudentByStudentNumber" resultMap="StudentResultMap">
+        SELECT * FROM students WHERE student_number = #{studentNumber}
+    </select>
+
+    <select id="findStudentByStudentNumberAndName" resultMap="StudentResultMap">
+        SELECT * FROM students WHERE student_number = #{studentNumber} AND name = #{name}
+    </select>
+
+    <insert id="insertStudent" parameterType="com.example.education.system.users.model.Student" useGeneratedKeys="true" keyProperty="studentId">
+        INSERT INTO students (user_id, name, student_number, major, grade, class, department, gender)
+        VALUES (#{userId}, #{name}, #{studentNumber}, #{major}, #{grade}, #{clazz}, #{department}, #{gender})
     </insert>
 
     <update id="updateStudent" parameterType="com.example.education.system.users.model.Student">
         UPDATE students SET
+        user_id = #{userId},
         name = #{name},
         student_number = #{studentNumber},
         major = #{major},

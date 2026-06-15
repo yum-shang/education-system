@@ -92,15 +92,22 @@ public class AuthService {
             teacher.setDepartment(request.getDepartment());
             usersUserRepository.insertTeacher(teacher);
         } else if ("student".equals(request.getRole())) {
-            // 创建学生记录
-            Student student = new Student();
-            student.setStudentId(user.getUserId());
-            student.setName(request.getName());
-            student.setStudentNumber(request.getStudentNumber());
-            student.setMajor(request.getMajor());
-            student.setGrade(request.getGrade());
-            student.setClazz(request.getClazz());
-            usersUserRepository.insertStudent(student);
+            // 学生注册时校验学号和姓名是否匹配管理员预导入的数据
+            Student existingStudent = usersUserRepository.findStudentByStudentNumberAndName(
+                    request.getStudentNumber(), request.getName());
+            if (existingStudent == null) {
+                AuthResponse response = new AuthResponse();
+                response.setCode(400);
+                response.setMessage("学号或姓名不存在，请核对后重试");
+                return response;
+            }
+
+            // 将已有学生记录关联到新账号
+            existingStudent.setUserId(user.getUserId());
+            existingStudent.setMajor(request.getMajor());
+            existingStudent.setGrade(request.getGrade());
+            existingStudent.setClazz(request.getClazz());
+            usersUserRepository.updateStudent(existingStudent);
         }
 
         // 生成JWT令牌

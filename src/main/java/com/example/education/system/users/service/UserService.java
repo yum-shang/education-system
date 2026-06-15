@@ -17,7 +17,20 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * 用户管理服务
@@ -72,7 +85,7 @@ public class UserService {
                     info.setBio(teacher.getBio());
                 }
             } else if ("student".equals(user.getRole())) {
-                Student student = userRepository.findStudentById(user.getUserId());
+                Student student = userRepository.findStudentByUserId(user.getUserId());
                 if (student != null) {
                     info.setName(student.getName());
                     info.setStudentNumber(student.getStudentNumber());
@@ -149,7 +162,7 @@ public class UserService {
                 data.setBio(teacher.getBio());
             }
         } else if ("student".equals(user.getRole())) {
-            Student student = userRepository.findStudentById(userId);
+            Student student = userRepository.findStudentByUserId(userId);
             if (student != null) {
                 data.setName(student.getName());
                 data.setStudentNumber(student.getStudentNumber());
@@ -215,7 +228,7 @@ public class UserService {
                     userRepository.insertTeacher(newTeacher);
                 }
             } else if ("student".equals(user.getRole())) {
-                Student student = userRepository.findStudentById(userId);
+                Student student = userRepository.findStudentByUserId(userId);
                 if (student != null) {
                     student.setName(profileData.getName());
                     student.setStudentNumber(profileData.getStudentNumber());
@@ -227,7 +240,7 @@ public class UserService {
                     userRepository.updateStudent(student);
                 } else {
                     Student newStudent = new Student();
-                    newStudent.setStudentId(userId);
+                    newStudent.setUserId(userId);
                     newStudent.setName(profileData.getName());
                     newStudent.setStudentNumber(profileData.getStudentNumber());
                     newStudent.setMajor(profileData.getMajor());
@@ -254,10 +267,10 @@ public class UserService {
         List<StudentListResponse.StudentInfo> studentInfos = new ArrayList<>();
 
         for (Student student : students) {
-            User user = userRepository.findUserById(student.getStudentId());
+            User user = userRepository.findUserById(student.getUserId());
 
             StudentListResponse.StudentInfo info = new StudentListResponse.StudentInfo();
-            info.setUserId(student.getStudentId());
+            info.setUserId(student.getUserId());
             if (user != null) {
                 info.setUsername(user.getUsername());
                 info.setEmail(user.getEmail());
@@ -313,7 +326,7 @@ public class UserService {
         authUserRepository.insert(user);
 
         Student student = new Student();
-        student.setStudentId(user.getUserId());
+        student.setUserId(user.getUserId());
         student.setName(request.getName());
         student.setStudentNumber(request.getStudentNumber() != null && !request.getStudentNumber().isEmpty()
                 ? request.getStudentNumber() : "S" + System.currentTimeMillis() % 100000);
@@ -377,7 +390,7 @@ public class UserService {
         }
         userRepository.updateUser(user);
 
-        Student student = userRepository.findStudentById(userId);
+        Student student = userRepository.findStudentByUserId(userId);
         if (student != null) {
             if (request.getName() != null) student.setName(request.getName());
             if (request.getStudentNumber() != null) student.setStudentNumber(request.getStudentNumber());
@@ -503,5 +516,143 @@ public class UserService {
         response.setMessage("批量导入完成：成功 " + successCount + " 条，失败 " + (results.size() - successCount) + " 条");
         response.setData(results);
         return response;
+    }
+
+    public BatchImportResultResponse importStudentsFromFile(MultipartFile file) {
+        BatchImportResultResponse response = new BatchImportResultResponse();
+        response.setCode(200);
+
+        String filename = file.getOriginalFilename();
+        if (filename == null || filename.isEmpty()) {
+            response.setCode(400);
+            response.setMessage("文件名为空");
+            return response;
+        }
+
+        List<String[]> rows;
+        try {
+            if (filename.endsWith(".xlsx") || filename.endsWith(".xls")) {
+                rows = parseExcel(file);
+            } else if (filename.endsWith(".csv")) {
+                rows = parseCsv(file);
+            } else {
+                response.setCode(400);
+                response.setMessage("不支持的文件格式，请上传 .xlsx、.xls 或 .csv 文件");
+                return response;
+            }
+        } catch (IOException e) {
+            response.setCode(500);
+            response.setMessage("文件解析失败: " + e.getMessage());
+            return response;
+        }
+
+        if (rows.isEmpty()) {
+            response.setCode(400);
+            response.setMessage("文件没有数据行");
+            return response;
+        }
+
+        // 第一行是表头
+        String[] headers = rows.get(0);
+        Map<String, Integer> headerMap = new HashMap<>();
+        for (int i = 0; i < headers.length; i++) {
+            headerMap.put(headers[i].trim(), i);
+        }
+
+        List<BatchImportResultItem> results = new ArrayList<>();
+        for (int i = 1; i < rows.size(); i++) {
+            String[] row = rows.get(i);
+            BatchImportResultItem item = new BatchImportResultItem();
+
+            String studentNumber = getCell(row, headerMap.get("学号"));
+            String name = getCell(row, headerMap.get("姓名"));
+
+            item.setStudentNumber(studentNumber);
+            item.setName(name);
+
+            if (studentNumber == null || studentNumber.isEmpty()) {
+                item.setSuccess(false);
+                item.setErrorMessage("学号为空");
+                results.add(item);
+                continue;
+            }
+            if (name == null || name.isEmpty()) {
+                item.setSuccess(false);
+                item.setErrorMessage("姓名为空");
+                results.add(item);
+                continue;
+            }
+            if (userRepository.findStudentByStudentNumber(studentNumber) != null) {
+                item.setSuccess(false);
+                item.setErrorMessage("学号已存在");
+                results.add(item);
+                continue;
+            }
+
+            try {
+                Student student = new Student();
+                student.setUserId(null);
+                student.setName(name);
+                student.setStudentNumber(studentNumber);
+                student.setMajor(getCell(row, headerMap.get("专业")));
+                student.setGrade(getCell(row, headerMap.get("年级")));
+                student.setClazz(getCell(row, headerMap.get("班级")));
+                student.setDepartment(getCell(row, headerMap.get("院系")));
+                student.setGender(getCell(row, headerMap.get("性别")));
+                userRepository.insertStudent(student);
+                item.setSuccess(true);
+            } catch (Exception e) {
+                item.setSuccess(false);
+                item.setErrorMessage("导入失败: " + e.getMessage());
+            }
+            results.add(item);
+        }
+
+        long successCount = results.stream().filter(BatchImportResultItem::isSuccess).count();
+        response.setMessage("批量导入完成：成功 " + successCount + " 条，失败 " + (results.size() - successCount) + " 条");
+        response.setData(results);
+        return response;
+    }
+
+    private List<String[]> parseExcel(MultipartFile file) throws IOException {
+        List<String[]> rows = new ArrayList<>();
+        Workbook workbook;
+        if (file.getOriginalFilename() != null && file.getOriginalFilename().endsWith(".xls")) {
+            workbook = new HSSFWorkbook(file.getInputStream());
+        } else {
+            workbook = new XSSFWorkbook(file.getInputStream());
+        }
+        Sheet sheet = workbook.getSheetAt(0);
+        for (Row row : sheet) {
+            String[] cells = new String[row.getLastCellNum()];
+            for (int i = 0; i < row.getLastCellNum(); i++) {
+                Cell cell = row.getCell(i);
+                cells[i] = cell == null ? "" : cell.toString().trim();
+            }
+            rows.add(cells);
+        }
+        workbook.close();
+        return rows;
+    }
+
+    private List<String[]> parseCsv(MultipartFile file) throws IOException {
+        List<String[]> rows = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (!line.trim().isEmpty()) {
+                    rows.add(line.split(","));
+                }
+            }
+        }
+        return rows;
+    }
+
+    private String getCell(String[] row, Integer index) {
+        if (index == null || index >= row.length) {
+            return null;
+        }
+        String val = row[index];
+        return (val == null || val.isEmpty()) ? null : val.trim();
     }
 }

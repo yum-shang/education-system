@@ -48,7 +48,7 @@ public class DashboardService {
                 Teacher teacher = userRepository.findTeacherById(user.getUserId());
                 ru.setName(teacher != null ? teacher.getName() : user.getUsername());
             } else if ("student".equals(user.getRole())) {
-                Student student = userRepository.findStudentById(user.getUserId());
+                Student student = userRepository.findStudentByUserId(user.getUserId());
                 ru.setName(student != null ? student.getName() : user.getUsername());
             } else {
                 ru.setName(user.getUsername());

@@ -106,7 +106,7 @@
             pa.review_time
         FROM project_applications pa
         LEFT JOIN research_projects rp ON pa.project_id = rp.project_id
-        LEFT JOIN students s ON pa.student_id = s.student_id
+        LEFT JOIN students s ON pa.student_id = s.user_id
         WHERE 1=1
         <if test="projectId != null">
             AND pa.project_id = #{projectId}

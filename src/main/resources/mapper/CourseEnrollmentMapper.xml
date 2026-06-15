@@ -163,7 +163,7 @@
                u.phone,
                ce.status
         FROM course_enrollments ce
-        JOIN students s ON ce.student_id = s.student_id
+        JOIN students s ON ce.student_id = s.user_id
         JOIN users u ON ce.student_id = u.user_id
         WHERE ce.schedule_id = #{scheduleId}
         <if test="keyword != null and keyword != ''">
@@ -176,7 +176,7 @@
     <select id="countEnrolledStudentsByScheduleId" resultType="java.lang.Integer">
         SELECT COUNT(*)
         FROM course_enrollments ce
-        JOIN students s ON ce.student_id = s.student_id
+        JOIN students s ON ce.student_id = s.user_id
         WHERE ce.schedule_id = #{scheduleId}
         <if test="keyword != null and keyword != ''">
             AND (s.name LIKE CONCAT('%', #{keyword}, '%') OR s.student_number LIKE CONCAT('%', #{keyword}, '%'))

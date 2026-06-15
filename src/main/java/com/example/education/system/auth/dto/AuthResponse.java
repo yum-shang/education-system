@@ -15,6 +15,7 @@ public class AuthResponse {
         private String role;
         private String token;
         private UserInfo user;
+        private Boolean exists;
     }
 
     @lombok.Data

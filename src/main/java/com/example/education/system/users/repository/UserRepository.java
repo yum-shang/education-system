@@ -34,6 +34,9 @@ public interface UserRepository {
 
     // 学生相关操作
     Student findStudentById(@Param("studentId") Integer studentId);
+    Student findStudentByUserId(@Param("userId") Integer userId);
+    Student findStudentByStudentNumber(@Param("studentNumber") String studentNumber);
+    Student findStudentByStudentNumberAndName(@Param("studentNumber") String studentNumber, @Param("name") String name);
     void insertStudent(Student student);
     void updateStudent(Student student);
 

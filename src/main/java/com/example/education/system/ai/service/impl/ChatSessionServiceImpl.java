@@ -40,7 +40,6 @@ public class ChatSessionServiceImpl extends ServiceImpl<ChatSessionMapper, ChatS
         ChatSession chatSession = new ChatSession();
         chatSession.setSessionId(sessionVO.getSessionId());
         chatSession.setUserId(UserContext.getUserId());
-        //chatSession.setTitle();
         chatSession.setCreateTime(new Timestamp(System.currentTimeMillis()));
         super.save(chatSession);
 

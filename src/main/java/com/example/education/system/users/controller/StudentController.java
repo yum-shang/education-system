@@ -13,11 +13,13 @@ import com.example.education.system.users.dto.CreateStudentRequest;
 import com.example.education.system.users.dto.StudentEnrollmentResponse;
 import com.example.education.system.users.dto.StudentListResponse;
 import com.example.education.system.users.dto.UpdateStudentRequest;
+import com.example.education.system.users.model.Student;
 import com.example.education.system.users.model.Teacher;
 import com.example.education.system.users.repository.UserRepository;
 import com.example.education.system.users.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -124,6 +126,11 @@ public class StudentController {
         return userService.batchImportStudents(request);
     }
 
+    @PostMapping("/import-file")
+    public BatchImportResultResponse importStudentsFromFile(@RequestParam("file") MultipartFile file) {
+        return userService.importStudentsFromFile(file);
+    }
+
     @PostMapping("/enrollments")
     public EnrollmentListResponse adminEnrollStudent(@RequestBody AdminEnrollmentRequest request) {
         return courseEnrollmentService.adminEnrollStudent(request.getStudentId(), request.getScheduleId());
@@ -132,5 +139,19 @@ public class StudentController {
     @DeleteMapping("/enrollments/{enrollmentId}")
     public EnrollmentListResponse adminDropStudent(@PathVariable Integer enrollmentId) {
         return courseEnrollmentService.adminDropStudent(enrollmentId);
+    }
+
+    @GetMapping("/check-number")
+    public com.example.education.system.auth.dto.AuthResponse checkStudentNumber(@RequestParam String studentNumber) {
+        com.example.education.system.auth.dto.AuthResponse response = new com.example.education.system.auth.dto.AuthResponse();
+        response.setCode(200);
+        
+        Student student = userRepository.findStudentByStudentNumber(studentNumber);
+        
+        com.example.education.system.auth.dto.AuthResponse.Data data = new com.example.education.system.auth.dto.AuthResponse.Data();
+        data.setExists(student != null);
+        response.setData(data);
+        
+        return response;
     }
 }

@@ -24,4 +24,10 @@
         updated_at = #{updatedAt}
         WHERE user_id = #{userId}
     </update>
+    <update id="updatePassword">
+        UPDATE users SET
+        password = #{password},
+        updated_at = NOW()
+        WHERE user_id = #{userId}
+    </update>
 </mapper>

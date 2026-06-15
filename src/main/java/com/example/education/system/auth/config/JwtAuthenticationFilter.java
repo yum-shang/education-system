@@ -32,7 +32,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
 
         //放行的接口
-        if (path.startsWith("/api/auth/") || path.startsWith("/api/schedule/")) {
+        if (path.startsWith("/api/auth/") || path.startsWith("/api/schedule/") || path.startsWith("/api/students/verify")) {
             chain.doFilter(request, response);
             return;
         }

@@ -1,16 +1,17 @@
 package com.example.education.system.ai.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.example.education.system.ai.config.PromptProvider;
 import com.example.education.system.ai.dto.SseEvent;
 import com.example.education.system.ai.model.ChatMessage;
-import com.example.education.system.ai.repository.ChatMessageMapper;
+import com.example.education.system.ai.service.ChatHistoryStorage;
 import com.example.education.system.ai.service.ChatService;
+import com.example.education.system.courses.tool.CourseQueryTools;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
@@ -19,10 +20,11 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
-import java.sql.Timestamp;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * AI 对话服务实现。
@@ -51,9 +53,10 @@ import java.util.List;
 public class ChatServiceImpl implements ChatService {
 
     private final ChatClient chatClient;
-    private final ChatMessageMapper chatMessageMapper;
+    private final ChatHistoryStorage chatHistoryStorage;
     private final ObjectMapper objectMapper;
     private final PromptProvider promptProvider;
+    private final CourseQueryTools courseQueryTools;
 
     /**
      * Spring Boot 自动配置的同步 Redis 模板。
@@ -77,8 +80,10 @@ public class ChatServiceImpl implements ChatService {
 
     private static final int EVENT_TEXT = 1001;
     private static final int EVENT_COMPLETE = 1002;
+    private static final int EVENT_COURSE = 1003;
 
     @Override
+    @PreAuthorize("isAuthenticated()")
     public Flux<String> chat(String question, String sessionId) {
         if (sessionId == null || sessionId.isBlank()) {
             return Flux.just(sseLine(new SseEvent("sessionId 不能为空", EVENT_COMPLETE)));
@@ -88,11 +93,7 @@ public class ChatServiceImpl implements ChatService {
         }
 
         // 1. 加载历史消息
-        List<ChatMessage> history = chatMessageMapper.selectList(
-                new LambdaQueryWrapper<ChatMessage>()
-                        .eq(ChatMessage::getSessionId, sessionId)
-                        .orderByAsc(ChatMessage::getCreateTime)
-        );
+        List<ChatMessage> history = chatHistoryStorage.loadHistory(sessionId);
 
         List<Message> messages = new ArrayList<>();
         messages.add(new SystemMessage(promptProvider.get()));
@@ -107,12 +108,16 @@ public class ChatServiceImpl implements ChatService {
 
         // 2. 保存用户消息
         try {
-            saveMessage(sessionId, "user", question);
+            chatHistoryStorage.saveMessage(sessionId, "user", question);
         } catch (Exception e) {
             log.error("保存用户消息失败, sessionId={}", sessionId, e);
         }
 
-        // 3. 调用 AI 流式返回，包装为 SSE data: 格式
+        // 3. 生成本请求唯一 ID，注册为活跃请求（工具方法通过此表写入课程数据）
+        String requestId = UUID.randomUUID().toString();
+        courseQueryTools.registerActiveRequest(requestId);
+
+        // 4. 调用 AI 流式返回，包装为 SSE data: 格式
         StringBuilder fullAnswer = new StringBuilder();
         String cancelKey = CANCEL_KEY_PREFIX + sessionId;
 
@@ -120,96 +125,105 @@ public class ChatServiceImpl implements ChatService {
                 .messages(messages.toArray(new Message[0]))
                 .stream()
                 .content()
-                /*
-                 * ============================================================
-                 * 取消检查（Redis 实现）
-                 *
-                 * 工作原理：
-                 *   stop(sessionId) 调用后，Redis 中会存在 "ai:cancel:{sessionId}" 这个 Key。
-                 *   takeWhile 每收到一个 AI 返回的文本 chunk，就检查一次该 Key：
-                 *     - Key 不存在 → takeWhile 返回 true  → chunk 继续流向下游（前端展示）
-                 *     - Key 存在   → takeWhile 返回 false → Flux 正常结束
-                 *       → 触发 concatWith 把已收到的部分回复存库
-                 *       → 清理 Redis Key
-                 *
-                 * 性能备注：
-                 *   hasKey(key) 是 Redis 的 EXISTS 命令，O(1) 操作，本地延迟 < 1ms。
-                 *   AI 流式 chunk 间隔通常在几百毫秒，CHECK 开销完全可以忽略。
-                 * ============================================================
-                 */
-                .takeWhile(chunk -> {
-                    Boolean cancelled = stringRedisTemplate.hasKey(cancelKey);
-                    if (Boolean.TRUE.equals(cancelled)) {
-                        log.info("检测到 Redis 取消标记，中止AI流, sessionId={}", sessionId);
-                    }
-                    return !Boolean.TRUE.equals(cancelled);
-                })
-                .doOnNext(fullAnswer::append)
-                .map(chunk -> sseLine(new SseEvent(chunk, EVENT_TEXT)))
-                /*
-                 * concatWith + Flux.defer：
-                 * 上游 Flux 完成（正常结束 / takeWhile 取消 / 异常）后，
-                 * 追加一个 SSE 完成事件。这里同时负责：
-                 *   1. 删除 Redis 取消 Key（无论哪种结束方式）
-                 *   2. 将 AI 已回复的部分内容写入数据库
-                 *   3. 发送 EVENT_COMPLETE 让前端关闭连接
-                 */
-                /*
-                 * concatWith + Flux.defer：
-                 * 上游 Flux 完成（正常结束 / takeWhile 取消）后执行。
-                 *
-                 * 关键判断：如果 Redis 取消 Key 此时还存在，说明流是被 stop() 取消的
-                 * ——此时客户端已经主动关闭了 SSE 连接，不应再尝试写入 EVENT_COMPLETE，
-                 * 否则 Spring 对已断开连接写入会触发 AsyncContext 异常。
-                 * 返回 Flux.empty() 让流静默结束即可。
-                 *
-                 * 如果 Key 不存在，说明是 AI 自然结束，正常发送 EVENT_COMPLETE。
-                 */
-                .concatWith(Flux.defer(() -> {
-                    boolean wasCancelled = Boolean.TRUE.equals(stringRedisTemplate.hasKey(cancelKey));
-                    stringRedisTemplate.delete(cancelKey);
-                    try {
-                        String answer = fullAnswer.toString();
-                        if (!answer.isEmpty()) {
-                            saveMessage(sessionId, "assistant", answer);
-                        }
-                    } catch (Exception e) {
-                        log.error("保存AI回复失败, sessionId={}", sessionId, e);
-                    }
-                    if (wasCancelled) {
-                        log.info("流已被取消，跳过发送完成事件, sessionId={}", sessionId);
-                        return Flux.empty();
-                    }
-                    return Flux.just(sseLine(new SseEvent("", EVENT_COMPLETE)));
-                }))
-                /*
-                 * doFinally：无论流以何种方式结束（正常/取消/异常），都执行一次兜底清理。
-                 * 这是最后一道防线，确保 Redis Key 不会残留。
-                 */
-                .doFinally(signalType -> {
-                    stringRedisTemplate.delete(cancelKey);
-                    log.debug("流结束, signalType={}, sessionId={}", signalType, sessionId);
-                })
-                .doOnError(e -> {
-                    stringRedisTemplate.delete(cancelKey);
-                    log.error("AI对话异常, sessionId={}", sessionId, e);
-                })
-                /*
-                 * onErrorComplete：当 concatWith 尝试写入 EVENT_COMPLETE 到已断开连接
-                 * 抛出 IOException/IllegalStateException 时，将其视为正常完成而非异常。
-                 * 避免 Spring ReactiveTypeHandler 因 AsyncContext 状态异常而打印堆栈。
-                 */
-                .onErrorComplete(e -> {
-                    log.debug("写入完成事件失败（客户端可能已断开）, sessionId={}, error={}",
-                            sessionId, e.getMessage());
-                    return true;
-                })
-                .onErrorResume(e -> {
-                    stringRedisTemplate.delete(cancelKey);
-                    log.error("AI流已被onErrorResume捕获, sessionId={}", sessionId, e);
-                    String msg = e.getMessage() != null ? e.getMessage() : "未知错误";
-                    return Flux.just(sseLine(new SseEvent(msg, EVENT_COMPLETE)));
-                });
+                        /*
+                         * ============================================================
+                         * 取消检查（Redis 实现）
+                         *
+                         * 工作原理：
+                         *   stop(sessionId) 调用后，Redis 中会存在 "ai:cancel:{sessionId}" 这个 Key。
+                         *   takeWhile 每收到一个 AI 返回的文本 chunk，就检查一次该 Key：
+                         *     - Key 不存在 → takeWhile 返回 true  → chunk 继续流向下游（前端展示）
+                         *     - Key 存在   → takeWhile 返回 false → Flux 正常结束
+                         *       → 触发 concatWith 把已收到的部分回复存库
+                         *       → 清理 Redis Key
+                         *
+                         * 性能备注：
+                         *   hasKey(key) 是 Redis 的 EXISTS 命令，O(1) 操作，本地延迟 < 1ms。
+                         *   AI 流式 chunk 间隔通常在几百毫秒，CHECK 开销完全可以忽略。
+                         * ============================================================
+                         */
+                        .takeWhile(chunk -> {
+                            Boolean cancelled = stringRedisTemplate.hasKey(cancelKey);
+                            if (Boolean.TRUE.equals(cancelled)) {
+                                log.info("检测到 Redis 取消标记，中止AI流, sessionId={}", sessionId);
+                            }
+                            return !Boolean.TRUE.equals(cancelled);
+                        })
+                        .doOnNext(fullAnswer::append)
+                        .map(chunk -> sseLine(new SseEvent(chunk, EVENT_TEXT)))
+                        /*
+                         * concatWith + Flux.defer：
+                         * 上游 Flux 完成（正常结束 / takeWhile 取消 / 异常）后，
+                         * 追加一个 SSE 完成事件。这里同时负责：
+                         *   1. 删除 Redis 取消 Key（无论哪种结束方式）
+                         *   2. 将 AI 已回复的部分内容写入数据库
+                         *   3. 发送 EVENT_COMPLETE 让前端关闭连接
+                         */
+                        /*
+                         * concatWith + Flux.defer：
+                         * 上游 Flux 完成（正常结束 / takeWhile 取消）后执行。
+                         *
+                         * 关键判断：如果 Redis 取消 Key 此时还存在，说明流是被 stop() 取消的
+                         * ——此时客户端已经主动关闭了 SSE 连接，不应再尝试写入 EVENT_COMPLETE，
+                         * 否则 Spring 对已断开连接写入会触发 AsyncContext 异常。
+                         * 返回 Flux.empty() 让流静默结束即可。
+                         *
+                         * 如果 Key 不存在，说明是 AI 自然结束，正常发送 EVENT_COMPLETE。
+                         */
+                        .concatWith(Flux.defer(() -> {
+                            boolean wasCancelled = Boolean.TRUE.equals(stringRedisTemplate.hasKey(cancelKey));
+                            stringRedisTemplate.delete(cancelKey);
+                            try {
+                                String answer = fullAnswer.toString();
+                                if (!answer.isEmpty()) {
+                                    chatHistoryStorage.saveMessage(sessionId, "assistant", answer);
+                                }
+                            } catch (Exception e) {
+                                log.error("保存AI回复失败, sessionId={}", sessionId, e);
+                            }
+                            if (wasCancelled) {
+                                log.info("流已被取消，跳过发送完成事件, sessionId={}", sessionId);
+                                return Flux.empty();
+                            }
+                            // 取出本次请求中工具查到的课程数据，输出 1003 事件
+                            List<Map<String, Object>> courseEvents = courseQueryTools.takeCourseEvents(requestId);
+                            Flux<String> sseCourse = Flux.empty();
+                            if (courseEvents != null && !courseEvents.isEmpty()) {
+                                sseCourse = Flux.fromIterable(courseEvents)
+                                        .map(data -> sseLine(new SseEvent(data, EVENT_COURSE)));
+                            }
+                            // 顺序：所有 1003（课程卡片）→ 1002（完成）
+                            return Flux.concat(sseCourse, Flux.just(sseLine(new SseEvent("", EVENT_COMPLETE))));
+                        }))
+                        /*
+                         * doFinally：无论流以何种方式结束（正常/取消/异常），都执行一次兜底清理。
+                         * 这是最后一道防线，确保 Redis Key 不会残留。
+                         */
+                        .doFinally(signalType -> {
+                            stringRedisTemplate.delete(cancelKey);
+                            courseQueryTools.takeCourseEvents(requestId);
+                            log.debug("流结束, signalType={}, sessionId={}", signalType, sessionId);
+                        })
+                        .doOnError(e -> {
+                            stringRedisTemplate.delete(cancelKey);
+                            log.error("AI对话异常, sessionId={}", sessionId, e);
+                        })
+                        /*
+                         * onErrorComplete：当 concatWith 尝试写入 EVENT_COMPLETE 到已断开连接
+                         * 抛出 IOException/IllegalStateException 时，将其视为正常完成而非异常。
+                         * 避免 Spring ReactiveTypeHandler 因 AsyncContext 状态异常而打印堆栈。
+                         */
+                        .onErrorComplete(e -> {
+                            log.debug("写入完成事件失败（客户端可能已断开）, sessionId={}, error={}",
+                                    sessionId, e.getMessage());
+                            return true;
+                        })
+                        .onErrorResume(e -> {
+                            stringRedisTemplate.delete(cancelKey);
+                            log.error("AI流已被onErrorResume捕获, sessionId={}", sessionId, e);
+                            String msg = e.getMessage() != null ? e.getMessage() : "未知错误";
+                            return Flux.just(sseLine(new SseEvent(msg, EVENT_COMPLETE)));
+                        });
     }
 
     /**
@@ -254,12 +268,5 @@ public class ChatServiceImpl implements ChatService {
         }
     }
 
-    private void saveMessage(String sessionId, String role, String content) {
-        ChatMessage msg = new ChatMessage();
-        msg.setSessionId(sessionId);
-        msg.setRole(role);
-        msg.setContent(content);
-        msg.setCreateTime(new Timestamp(System.currentTimeMillis()));
-        chatMessageMapper.insert(msg);
-    }
+
 }

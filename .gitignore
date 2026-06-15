@@ -1,4 +1,20 @@
-# 项目排除路径
+# Maven
 /target/
-./src/main/resources/application.properties
+
+# IDE (IntelliJ IDEA)
+.idea/
+*.iml
+out/
+
+# 配置文件（含敏感信息，用模板代替）
 src/main/resources/application.yml
+src/main/resources/application.properties
+
+# Redis
+dump.rdb
+
+# 日志
+logs/
+
+# 临时文件
+tmp_request.json
