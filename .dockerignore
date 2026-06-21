@@ -1,0 +1,11 @@
+.git
+.gitignore
+.idea
+*.iml
+target
+*.log
+logs
+uploads
+deploy
+docs
+*.md

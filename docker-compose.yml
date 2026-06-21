@@ -1,0 +1,66 @@
+version: "3.8"
+
+services:
+  # ---- MySQL 8.0 ----
+  mysql:
+    image: mysql:8.0
+    container_name: edu-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: education_system
+      MYSQL_CHARSET: utf8mb4
+      MYSQL_COLLATION: utf8mb4_unicode_ci
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./src/main/resources/db/mysql.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./src/main/resources/db/ai_session_summaries.sql:/docker-entrypoint-initdb.d/02-summaries.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot123"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # ---- Redis 7 ----
+  redis:
+    image: redis:7-alpine
+    container_name: edu-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ---- Spring Boot App ----
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: edu-app
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-sk-b33a23e8385e4682ae2f46272a819930}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - uploads-data:/app/uploads
+      - logs-data:/app/logs
+    restart: unless-stopped
+
+volumes:
+  mysql-data:
+  redis-data:
+  uploads-data:
+  logs-data:
