@@ -84,9 +84,9 @@ public class AuthService {
 
         // 根据角色创建详细信息
         if ("teacher".equals(request.getRole())) {
-            // 创建教师记录
+            // 创建教师记录，teacherId 由数据库自增生成
             Teacher teacher = new Teacher();
-            teacher.setTeacherId(user.getUserId());
+            teacher.setUserId(user.getUserId());
             teacher.setName(request.getName());
             teacher.setTitle(request.getTitle());
             teacher.setDepartment(request.getDepartment());

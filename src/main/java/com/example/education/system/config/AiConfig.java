@@ -1,6 +1,8 @@
 package com.example.education.system.config;
 
 import com.example.education.system.courses.tool.CourseQueryTools;
+import com.example.education.system.research.tool.ResearchQueryTools;
+import com.example.education.system.users.tool.StudentQueryTool;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.openai.OpenAiChatModel;
@@ -19,9 +21,11 @@ public class AiConfig {
      * defaultTools() 会扫描传入 Bean 中的 @Tool 方法，生成工具定义随每次请求发给 AI。
      */
     @Bean
-    public ChatClient chatClient(ChatModel chatModel, CourseQueryTools courseQueryTools) {
+    public ChatClient chatClient(ChatModel chatModel, CourseQueryTools courseQueryTools,
+                                  StudentQueryTool studentQueryTool,
+                                  ResearchQueryTools researchQueryTools) {
         return ChatClient.builder(chatModel)
-                .defaultTools(courseQueryTools)
+                .defaultTools(courseQueryTools, studentQueryTool, researchQueryTools)
                 .build();
     }
 

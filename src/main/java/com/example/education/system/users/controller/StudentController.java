@@ -1,5 +1,7 @@
 package com.example.education.system.users.controller;
 
+import com.example.education.system.auth.dto.AuthResponse;
+import com.example.education.system.auth.model.User;
 import com.example.education.system.courses.dto.EnrollmentListResponse;
 import com.example.education.system.courses.model.Course;
 import com.example.education.system.courses.model.CourseEnrollment;
@@ -16,8 +18,10 @@ import com.example.education.system.users.dto.UpdateStudentRequest;
 import com.example.education.system.users.model.Student;
 import com.example.education.system.users.model.Teacher;
 import com.example.education.system.users.repository.UserRepository;
+import com.example.education.system.users.service.StudentService;
 import com.example.education.system.users.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -29,6 +33,9 @@ import java.util.List;
 public class StudentController {
 
     @Autowired
+    private StudentService studentService;
+
+    @Autowired
     private UserService userService;
 
     @Autowired
@@ -37,6 +44,7 @@ public class StudentController {
     @Autowired
     private CourseRepository courseRepository;
 
+    @Qualifier("userRepository")
     @Autowired
     private UserRepository userRepository;
 
@@ -72,7 +80,15 @@ public class StudentController {
             @PathVariable Integer userId,
             @RequestParam(required = false) String semester) {
 
-        EnrollmentListResponse enrollResponse = courseEnrollmentService.getStudentEnrollments(userId, semester, null, 1, 1000);
+        Student student = userRepository.findStudentByUserId(userId);
+        if (student == null) {
+            StudentEnrollmentResponse response = new StudentEnrollmentResponse();
+            response.setCode(404);
+            response.setMessage("学生不存在");
+            return response;
+        }
+        EnrollmentListResponse enrollResponse = courseEnrollmentService.getStudentEnrollments(
+                student.getStudentId(), semester, null, 1, 1000);
 
         StudentEnrollmentResponse response = new StudentEnrollmentResponse();
         response.setCode(enrollResponse.getCode());
@@ -108,7 +124,7 @@ public class StudentController {
                         info.setTeacherTitle(teacher.getTitle());
                         info.setTeacherDept(teacher.getDepartment());
 
-                        com.example.education.system.auth.model.User teacherUser = userRepository.findUserById(schedule.getTeacherId());
+                        User teacherUser = userRepository.findUserById(teacher.getUserId());
                         if (teacherUser != null) {
                             info.setTeacherEmail(teacherUser.getEmail());
                         }
@@ -123,12 +139,12 @@ public class StudentController {
 
     @PostMapping("/batch")
     public BatchImportResultResponse batchImportStudents(@RequestBody BatchImportStudentRequest request) {
-        return userService.batchImportStudents(request);
+        return studentService.batchImportStudents(request);
     }
 
     @PostMapping("/import-file")
     public BatchImportResultResponse importStudentsFromFile(@RequestParam("file") MultipartFile file) {
-        return userService.importStudentsFromFile(file);
+        return studentService.importStudentsFromFile(file);
     }
 
     @PostMapping("/enrollments")
@@ -142,16 +158,17 @@ public class StudentController {
     }
 
     @GetMapping("/check-number")
-    public com.example.education.system.auth.dto.AuthResponse checkStudentNumber(@RequestParam String studentNumber) {
-        com.example.education.system.auth.dto.AuthResponse response = new com.example.education.system.auth.dto.AuthResponse();
+    public AuthResponse checkStudentNumber(@RequestParam String studentNumber) {
+        AuthResponse response = new AuthResponse();
         response.setCode(200);
         
         Student student = userRepository.findStudentByStudentNumber(studentNumber);
         
-        com.example.education.system.auth.dto.AuthResponse.Data data = new com.example.education.system.auth.dto.AuthResponse.Data();
+        AuthResponse.Data data = new AuthResponse.Data();
         data.setExists(student != null);
         response.setData(data);
         
         return response;
     }
+
 }

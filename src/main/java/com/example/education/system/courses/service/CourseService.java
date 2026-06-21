@@ -9,6 +9,7 @@ import com.example.education.system.courses.repository.CourseRepository;
 import com.example.education.system.users.model.Teacher;
 import com.example.education.system.users.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +31,7 @@ public class CourseService {
     @Autowired
     private CourseRepository courseRepository;
 
+    @Qualifier("userRepository")
     @Autowired
     private UserRepository userRepository;
 

@@ -33,4 +33,5 @@ public class ApplicationListResponse {
         private String applyTime;
         private String reviewTime;
     }
+
 }

@@ -1,32 +1,55 @@
 package com.example.education.system.ai.VO;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 import java.util.List;
 
-@NoArgsConstructor
-@AllArgsConstructor
-@Data
 public class SessionVO {
 
-    //标识AI助手会话
     private String sessionId;
 
     private String title;
 
-    private  String describe;
+    private String describe;
 
     private List<Example> examples;
 
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    public static class Example {
-        private String title;
-
-        private String describe;
+    public SessionVO() {
     }
 
+    public SessionVO(String sessionId, String title, String describe, List<Example> examples) {
+        this.sessionId = sessionId;
+        this.title = title;
+        this.describe = describe;
+        this.examples = examples;
+    }
+
+    public String getSessionId() { return sessionId; }
+    public void setSessionId(String sessionId) { this.sessionId = sessionId; }
+
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
+
+    public String getDescribe() { return describe; }
+    public void setDescribe(String describe) { this.describe = describe; }
+
+    public List<Example> getExamples() { return examples; }
+    public void setExamples(List<Example> examples) { this.examples = examples; }
+
+    public static class Example {
+        private String title;
+        private String describe;
+
+        public Example() {
+        }
+
+        public Example(String title, String describe) {
+            this.title = title;
+            this.describe = describe;
+        }
+
+        public String getTitle() { return title; }
+        public void setTitle(String title) { this.title = title; }
+
+        public String getDescribe() { return describe; }
+        public void setDescribe(String describe) { this.describe = describe; }
+    }
 }

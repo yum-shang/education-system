@@ -20,17 +20,19 @@ CREATE TABLE IF NOT EXISTS users (
 
 -- 2. 教师表 (teachers)
 CREATE TABLE IF NOT EXISTS teachers (
-    teacher_id INT PRIMARY KEY,
+    teacher_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
     name VARCHAR(50) NOT NULL,
     title VARCHAR(50),
     department VARCHAR(100),
     bio TEXT,
-    FOREIGN KEY (teacher_id) REFERENCES users(user_id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
 -- 3. 学生表 (students)
 CREATE TABLE IF NOT EXISTS students (
-    student_id INT PRIMARY KEY,
+    student_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
     name VARCHAR(50) NOT NULL,
     student_number VARCHAR(20) NOT NULL UNIQUE,
     major VARCHAR(100),
@@ -38,7 +40,7 @@ CREATE TABLE IF NOT EXISTS students (
     class VARCHAR(50),
     department VARCHAR(100),
     gender VARCHAR(10),
-    FOREIGN KEY (student_id) REFERENCES users(user_id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
 -- 4. 课程表 (courses)
@@ -222,11 +224,15 @@ CREATE TABLE IF NOT EXISTS ai_sessions (
     title VARCHAR(100) COMMENT '会话标题',
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    expire_at DATETIME NULL COMMENT '会话过期时间（滑动续期，驱动 Redis TTL）',
+    status VARCHAR(16) NOT NULL DEFAULT 'active' COMMENT '会话状态：active/closed/expired',
     creator BIGINT COMMENT '创建人',
     updater BIGINT COMMENT '更新人',
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     INDEX idx_session_id (session_id),
-    INDEX idx_user_id (user_id)
+    INDEX idx_user_id (user_id),
+    INDEX idx_expire_at (expire_at),
+    INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI会话表';
 
 -- 18. AI对话消息表 (ai_messages)
@@ -239,3 +245,16 @@ CREATE TABLE IF NOT EXISTS `ai_messages` (
     PRIMARY KEY (`id`),
     INDEX `idx_session_id` (`session_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='AI对话消息表';
+
+-- 19. AI会话滚动摘要表 (ai_session_summaries)
+-- 每个 session 仅保留最新一条滚动摘要；满 batch 条消息后异步合并更新
+CREATE TABLE IF NOT EXISTS ai_session_summaries (
+    id              BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键',
+    session_id      VARCHAR(64)  NOT NULL COMMENT '会话ID，关联 ai_sessions.session_id',
+    summary_content TEXT         NOT NULL COMMENT '滚动摘要正文',
+    covered_count   INT          NOT NULL DEFAULT 0 COMMENT '已纳入摘要的消息条数(user+assistant合计)',
+    version         INT          NOT NULL DEFAULT 1 COMMENT '摘要版本号，每次滚动+1',
+    create_time     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    UNIQUE KEY uk_session_id (session_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='AI会话滚动摘要';

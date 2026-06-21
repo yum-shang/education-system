@@ -3,10 +3,11 @@ package com.example.education.system.ai.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.example.education.system.ai.model.ChatMessage;
 import com.example.education.system.ai.repository.ChatMessageMapper;
+import com.example.education.system.ai.config.LegacyChatHistoryConditions;
 import com.example.education.system.ai.service.ChatHistoryStorage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
 
 import java.sql.Timestamp;
@@ -20,17 +21,34 @@ import java.util.List;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "ai.chat-history.storage", havingValue = "mysql", matchIfMissing = true)
+@Conditional(LegacyChatHistoryConditions.Mysql.class)
 public class MySqlChatHistoryStorage implements ChatHistoryStorage {
 
     private final ChatMessageMapper chatMessageMapper;
 
     @Override
     public List<ChatMessage> loadHistory(String sessionId) {
+        return loadHistory(sessionId, Integer.MAX_VALUE);
+    }
+
+    @Override
+    public List<ChatMessage> loadHistory(String sessionId, int maxMessages) {
+        if (maxMessages <= 0) {
+            return List.of();
+        }
+        LambdaQueryWrapper<ChatMessage> wrapper = new LambdaQueryWrapper<ChatMessage>()
+                .eq(ChatMessage::getSessionId, sessionId);
+        if (maxMessages < Integer.MAX_VALUE) {
+            // 先取最新 N 条再反转，保证返回升序且只保留最近上下文
+            wrapper.orderByDesc(ChatMessage::getCreateTime)
+                    .last("LIMIT " + maxMessages);
+            List<ChatMessage> recent = chatMessageMapper.selectList(wrapper);
+            recent = new java.util.ArrayList<>(recent);
+            java.util.Collections.reverse(recent);
+            return recent;
+        }
         return chatMessageMapper.selectList(
-                new LambdaQueryWrapper<ChatMessage>()
-                        .eq(ChatMessage::getSessionId, sessionId)
-                        .orderByAsc(ChatMessage::getCreateTime)
+                wrapper.orderByAsc(ChatMessage::getCreateTime)
         );
     }
 

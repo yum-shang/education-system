@@ -70,7 +70,7 @@
         JOIN course_schedules cs ON ce.schedule_id = cs.schedule_id
         JOIN courses c ON cs.course_id = c.course_id
         JOIN teachers t ON cs.teacher_id = t.teacher_id
-        JOIN users u ON t.teacher_id = u.user_id
+        JOIN users u ON t.user_id = u.user_id
         WHERE ce.student_id = #{studentId}
         <if test="semester != null and semester != ''">
             AND cs.semester = #{semester}
@@ -113,7 +113,7 @@
         FROM course_schedules cs
         JOIN courses c ON cs.course_id = c.course_id
         JOIN teachers t ON cs.teacher_id = t.teacher_id
-        JOIN users u ON t.teacher_id = u.user_id
+        JOIN users u ON t.user_id = u.user_id
         WHERE cs.schedule_id NOT IN (
             SELECT schedule_id FROM course_enrollments
             WHERE student_id = #{studentId} AND status = 'enrolled'
@@ -163,8 +163,8 @@
                u.phone,
                ce.status
         FROM course_enrollments ce
-        JOIN students s ON ce.student_id = s.user_id
-        JOIN users u ON ce.student_id = u.user_id
+        JOIN students s ON ce.student_id = s.student_id
+        JOIN users u ON s.user_id = u.user_id
         WHERE ce.schedule_id = #{scheduleId}
         <if test="keyword != null and keyword != ''">
             AND (s.name LIKE CONCAT('%', #{keyword}, '%') OR s.student_number LIKE CONCAT('%', #{keyword}, '%'))
@@ -176,7 +176,7 @@
     <select id="countEnrolledStudentsByScheduleId" resultType="java.lang.Integer">
         SELECT COUNT(*)
         FROM course_enrollments ce
-        JOIN students s ON ce.student_id = s.user_id
+        JOIN students s ON ce.student_id = s.student_id
         WHERE ce.schedule_id = #{scheduleId}
         <if test="keyword != null and keyword != ''">
             AND (s.name LIKE CONCAT('%', #{keyword}, '%') OR s.student_number LIKE CONCAT('%', #{keyword}, '%'))

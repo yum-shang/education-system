@@ -22,6 +22,11 @@ public interface ChatHistoryStorage {
     List<ChatMessage> loadHistory(String sessionId);
 
     /**
+     * 加载最近 maxMessages 条历史（按时间升序），用于控制大模型上下文长度。
+     */
+    List<ChatMessage> loadHistory(String sessionId, int maxMessages);
+
+    /**
      * 保存一条消息到指定会话。
      */
     void saveMessage(String sessionId, String role, String content);

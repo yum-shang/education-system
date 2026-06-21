@@ -15,6 +15,7 @@ import com.example.education.system.users.model.Teacher;
 import com.example.education.system.users.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,9 +48,10 @@ public class ScheduleService {
     @Autowired
     private CourseRepository courseRepository;
     
+    @Qualifier("userRepository")
     @Autowired
     private UserRepository userRepository;
-    
+
     private static final String[] TIME_SLOT_START = {
         "08:00", "09:00", "10:00", "11:00", "14:00", "15:00", "16:00", "17:00", "19:00"
     };

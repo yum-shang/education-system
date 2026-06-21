@@ -38,7 +38,7 @@
 
     <select id="findTeamLeaderName" resultType="java.lang.String">
         SELECT s.name FROM students s
-        WHERE s.user_id = #{leaderId}
+        WHERE s.student_id = #{leaderId}
     </select>
 
     <select id="findTeamById" resultType="com.example.education.system.innovation.model.InnovationTeam">
@@ -106,7 +106,7 @@
             ta.review_time AS reviewTime
         FROM team_applications ta
         JOIN innovation_teams it ON ta.team_id = it.team_id
-        JOIN students s ON ta.student_id = s.user_id
+        JOIN students s ON ta.student_id = s.student_id
         WHERE 1=1
         <if test="teamId != null">
             AND ta.team_id = #{teamId}

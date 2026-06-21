@@ -1,7 +1,8 @@
 package com.example.education.system.ai.config;
 
 import jakarta.annotation.PostConstruct;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
@@ -18,14 +19,15 @@ import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.concurrent.atomic.AtomicReference;
 
-@Slf4j
 @Component
 public class PromptProvider {
+
+    private static final Logger log = LoggerFactory.getLogger(PromptProvider.class);
 
     private static final String CLASSPATH_PROMPT = "classpath:prompts/system-prompt.txt";
 
     private static final String FALLBACK_PROMPT = """
-            表面你是教学管理系统的AI智能助理，请用中文回答，保持专业、友好、简洁的风格。
+            你是教学管理系统的AI智能助理，请用中文回答，保持专业、友好、简洁的风格。
             """;
 
     @Value("${ai.prompt.path:}")

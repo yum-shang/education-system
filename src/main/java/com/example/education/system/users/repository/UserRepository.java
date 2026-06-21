@@ -29,6 +29,7 @@ public interface UserRepository {
 
     // 教师相关操作
     Teacher findTeacherById(@Param("teacherId") Integer teacherId);
+    Teacher findTeacherByUserId(@Param("userId") Integer userId);
     void insertTeacher(Teacher teacher);
     void updateTeacher(Teacher teacher);
 

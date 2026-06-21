@@ -4,9 +4,13 @@ import com.example.education.system.grades.dto.CreateGradeRequest;
 import com.example.education.system.grades.dto.GradeBatchResponse;
 import com.example.education.system.grades.dto.GradeListResponse;
 import com.example.education.system.grades.service.GradeService;
+import com.example.education.system.users.model.Student;
+import com.example.education.system.users.model.Teacher;
+import com.example.education.system.users.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -19,9 +23,13 @@ public class GradeController {
     @Autowired
     private GradeService gradeService;
 
+    @Qualifier("userRepository")
+    @Autowired
+    private UserRepository userRepository;
+
     @PostMapping
     public GradeListResponse createGrade(@RequestBody CreateGradeRequest request, HttpServletRequest httpRequest) {
-        Integer teacherId = getCurrentTeacherId(httpRequest);
+        Integer teacherId = resolveTeacherId(httpRequest);
         if (teacherId == null) {
             GradeListResponse response = new GradeListResponse();
             response.setCode(401);
@@ -31,12 +39,11 @@ public class GradeController {
         return gradeService.createGrade(request, teacherId);
     }
 
-    private Integer getCurrentTeacherId(HttpServletRequest request) {
+    private Integer resolveTeacherId(HttpServletRequest request) {
         Object userId = request.getAttribute("userId");
-        if (userId != null) {
-            return (Integer) userId;
-        }
-        return null;
+        if (userId == null) return null;
+        Teacher teacher = userRepository.findTeacherByUserId((Integer) userId);
+        return teacher != null ? teacher.getTeacherId() : null;
     }
 
     @PutMapping("/{gradeId}")
@@ -61,6 +68,10 @@ class TeacherGradeController {
 
     @Autowired
     private GradeService gradeService;
+
+    @Qualifier("userRepository")
+    @Autowired
+    private UserRepository userRepository;
 
     @GetMapping
     public GradeListResponse getTeacherGrades(
@@ -89,7 +100,7 @@ class TeacherGradeController {
             @RequestParam Integer scheduleId,
             @RequestParam("file") MultipartFile file,
             HttpServletRequest httpRequest) throws IOException {
-        Integer teacherId = getCurrentTeacherId(httpRequest);
+        Integer teacherId = resolveTeacherId(httpRequest);
         if (teacherId == null) {
             GradeBatchResponse response = new GradeBatchResponse();
             response.setTotal(0);
@@ -101,12 +112,11 @@ class TeacherGradeController {
         return gradeService.batchImportGrades(scheduleId, teacherId, file);
     }
 
-    private Integer getCurrentTeacherId(HttpServletRequest request) {
+    private Integer resolveTeacherId(HttpServletRequest request) {
         Object userId = request.getAttribute("userId");
-        if (userId != null) {
-            return (Integer) userId;
-        }
-        return null;
+        if (userId == null) return null;
+        Teacher teacher = userRepository.findTeacherByUserId((Integer) userId);
+        return teacher != null ? teacher.getTeacherId() : null;
     }
 }
 
@@ -117,6 +127,10 @@ class StudentGradeController {
     @Autowired
     private GradeService gradeService;
 
+    @Qualifier("userRepository")
+    @Autowired
+    private UserRepository userRepository;
+
     @GetMapping
     public GradeListResponse getStudentGrades(
             @RequestParam(required = false) String semester,
@@ -124,7 +138,7 @@ class StudentGradeController {
             @RequestParam Integer page,
             @RequestParam Integer pageSize,
             HttpServletRequest request) {
-        Integer studentId = getCurrentStudentId(request);
+        Integer studentId = resolveStudentId(request);
         if (studentId == null) {
             GradeListResponse response = new GradeListResponse();
             response.setCode(401);
@@ -136,7 +150,7 @@ class StudentGradeController {
 
     @GetMapping("/trend")
     public GradeListResponse getStudentGradeTrend(HttpServletRequest request) {
-        Integer studentId = getCurrentStudentId(request);
+        Integer studentId = resolveStudentId(request);
         if (studentId == null) {
             GradeListResponse response = new GradeListResponse();
             response.setCode(401);
@@ -152,7 +166,7 @@ class StudentGradeController {
             @RequestParam(required = false) Integer year,
             HttpServletRequest request,
             HttpServletResponse response) throws IOException {
-        Integer studentId = getCurrentStudentId(request);
+        Integer studentId = resolveStudentId(request);
         if (studentId == null) {
             response.setStatus(401);
             return;
@@ -160,11 +174,13 @@ class StudentGradeController {
         gradeService.exportStudentGradeReport(studentId, semester, year, response);
     }
 
-    private Integer getCurrentStudentId(HttpServletRequest request) {
-        Object userId = request.getAttribute("userId");
-        if (userId != null) {
-            return (Integer) userId;
-        }
-        return null;
+    /**
+     * 从 JWT 获取 userId，查 Student 表得到自增 student_id。
+     */
+    private Integer resolveStudentId(HttpServletRequest req) {
+        Object userId = req.getAttribute("userId");
+        if (userId == null) return null;
+        Student student = userRepository.findStudentByUserId((Integer) userId);
+        return student != null ? student.getStudentId() : null;
     }
 }

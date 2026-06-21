@@ -5,11 +5,9 @@ import com.example.education.system.courses.dto.EnrolledStudentInfo;
 import com.example.education.system.courses.model.CourseEnrollment;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-@Repository("courseEnrollmentRepository")
 @Mapper
 public interface CourseEnrollmentRepository {
     void insertEnrollment(CourseEnrollment enrollment);

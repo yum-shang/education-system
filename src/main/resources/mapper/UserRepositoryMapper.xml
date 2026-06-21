@@ -89,13 +89,18 @@
         SELECT * FROM teachers WHERE teacher_id = #{teacherId}
     </select>
 
-    <insert id="insertTeacher" parameterType="com.example.education.system.users.model.Teacher">
-        INSERT INTO teachers (teacher_id, name, title, department, bio)
-        VALUES (#{teacherId}, #{name}, #{title}, #{department}, #{bio})
+    <select id="findTeacherByUserId" resultType="com.example.education.system.users.model.Teacher">
+        SELECT * FROM teachers WHERE user_id = #{userId}
+    </select>
+
+    <insert id="insertTeacher" parameterType="com.example.education.system.users.model.Teacher" useGeneratedKeys="true" keyProperty="teacherId">
+        INSERT INTO teachers (user_id, name, title, department, bio)
+        VALUES (#{userId}, #{name}, #{title}, #{department}, #{bio})
     </insert>
 
     <update id="updateTeacher" parameterType="com.example.education.system.users.model.Teacher">
         UPDATE teachers SET
+        user_id = #{userId},
         name = #{name},
         title = #{title},
         department = #{department},

@@ -47,7 +47,7 @@
                g.score, g.grade_level AS gradeLevel, g.comment
         FROM grades g
         JOIN course_enrollments ce ON g.enrollment_id = ce.enrollment_id
-        JOIN students s ON ce.student_id = s.user_id
+        JOIN students s ON ce.student_id = s.student_id
         WHERE ce.schedule_id = #{scheduleId}
         ORDER BY s.student_number
     </select>
@@ -62,7 +62,7 @@
                cs.semester, cs.year
         FROM grades g
         JOIN course_enrollments ce ON g.enrollment_id = ce.enrollment_id
-        JOIN students s ON ce.student_id = s.user_id
+        JOIN students s ON ce.student_id = s.student_id
         JOIN course_schedules cs ON ce.schedule_id = cs.schedule_id
         JOIN courses c ON cs.course_id = c.course_id
         JOIN teachers t ON cs.teacher_id = t.teacher_id
@@ -150,7 +150,7 @@
                g.grade_level AS gradeLevel,
                g.comment
         FROM course_enrollments ce
-        JOIN students s ON ce.student_id = s.user_id
+        JOIN students s ON ce.student_id = s.student_id
         LEFT JOIN grades g ON ce.enrollment_id = g.enrollment_id
         WHERE ce.schedule_id = #{scheduleId}
         ORDER BY s.student_number

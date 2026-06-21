@@ -11,6 +11,7 @@ public class ResearchProject {
     private String description;
     private Integer teacherId;
     private String status;
+    private String tags;
     private Date startDate;
     private Date endDate;
     private Timestamp createdAt;
