@@ -202,7 +202,7 @@ class ResearchQueryToolsTest {
 
             String result = researchQueryTools.recommendProjects(1, toolContext);
 
-            assertThat(result).contains("无标签项目");
+            assertThat(result).isEqualTo("暂未找到与学生选课方向匹配的科研项目");
         }
     }
 

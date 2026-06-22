@@ -11,8 +11,6 @@ import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -48,8 +46,7 @@ public class ResearchQueryTools {
      */
     @Tool(description = "查询已发布且招募中的科研项目列表，可按关键词搜索项目名称、描述或标签")
     public List<ResearchProject> findResearchProjects(
-            @ToolParam(description = "搜索关键词（可选），匹配项目名称、描述或标签", required = false) String keyword,
-            ToolContext toolContext) {
+            @ToolParam(description = "搜索关键词（可选），匹配项目名称、描述或标签", required = false) String keyword) {
         String kw = (keyword == null || keyword.isBlank()) ? null : keyword;
         List<ResearchProject> projects = researchRepository.findProjects("recruiting", null, kw, 0, 50);
         log.debug("AI 调用 findResearchProjects, keyword={}, 结果数={}", kw, projects.size());
@@ -75,8 +72,10 @@ public class ResearchQueryTools {
         // 2. 查所有招募中的科研项目
         List<ResearchProject> projects = researchRepository.findProjects("recruiting", null, null, 0, 100);
 
-        // 3. 按标签与课程名的匹配度排序
+        // 3. 按标签与课程名的匹配度降序排列；学生有选课时过滤 0 分项目
+        boolean hasEnrollments = !courseNames.isEmpty();
         List<ResearchProject> ranked = projects.stream()
+                .filter(p -> !hasEnrollments || matchScore(p.getTags(), courseNames) > 0)
                 .sorted((a, b) -> Integer.compare(
                         matchScore(b.getTags(), courseNames),
                         matchScore(a.getTags(), courseNames)))
