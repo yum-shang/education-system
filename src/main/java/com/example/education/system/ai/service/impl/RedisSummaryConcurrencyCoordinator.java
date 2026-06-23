@@ -57,13 +57,14 @@ public class RedisSummaryConcurrencyCoordinator implements SummaryConcurrencyCoo
     /** 当前异步任务线程持有的锁 token（每个 triggerIfNeeded 在单线程内完成） */
     private final ThreadLocal<String> lockTokens = new ThreadLocal<>();
 
+
     @Override
     public boolean tryLock(String sessionId) {
         String token = UUID.randomUUID().toString();
         Boolean acquired = stringRedisTemplate.opsForValue().setIfAbsent(
-                RedisHotMessageKeys.lock(sessionId),
-                token,
-                LOCK_TTL
+                RedisHotMessageKeys.lock(sessionId),//对sessionId进行加锁
+                token,//谁加的锁
+                LOCK_TTL//加多长时间
         );
         if (Boolean.TRUE.equals(acquired)) {
             lockTokens.set(token);
@@ -91,6 +92,10 @@ public class RedisSummaryConcurrencyCoordinator implements SummaryConcurrencyCoo
         }
     }
 
+    /*
+    *对一次分支进行总结
+    *
+    * */
     @Override
     public List<ChatMessage> captureBatchForSummary(String sessionId) {
         // 若上次摘要失败遗留 snapshot，先合并回 hot 再重新捕获
@@ -120,6 +125,9 @@ public class RedisSummaryConcurrencyCoordinator implements SummaryConcurrencyCoo
         return batch;
     }
 
+    /*
+    *
+    * */
     @Override
     public void onSummarySuccess(String sessionId, List<ChatMessage> summarizedBatch) {
         redisHotMessageStore.deleteSnapshot(sessionId);

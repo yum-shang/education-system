@@ -36,6 +36,7 @@ public class RedisHotMessageStoreImpl implements RedisHotMessageStore {
     private final ObjectMapper objectMapper;
     private final ChatSessionService chatSessionService;
 
+    //存储消息
     @Override
     public void saveMessage(String sessionId, String role, String content) {
         ChatMessage msg = new ChatMessage();
@@ -59,6 +60,7 @@ public class RedisHotMessageStoreImpl implements RedisHotMessageStore {
         return readList(RedisHotMessageKeys.hot(sessionId));
     }
 
+    //
     @Override
     public List<ChatMessage> loadSnapshot(String sessionId) {
         return readList(RedisHotMessageKeys.snapshot(sessionId));
@@ -130,6 +132,7 @@ public class RedisHotMessageStoreImpl implements RedisHotMessageStore {
         stringRedisTemplate.expire(RedisHotMessageKeys.snapshot(sessionId), ttl);
     }
 
+    //
     @Override
     public void prependToHot(String sessionId, List<ChatMessage> olderFirst) {
         if (olderFirst == null || olderFirst.isEmpty()) {

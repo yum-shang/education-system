@@ -2,6 +2,8 @@ package com.example.education.system.ai.VO;
 
 import java.util.List;
 
+
+//会话类，调用工具
 public class SessionVO {
 
     private String sessionId;
@@ -34,6 +36,7 @@ public class SessionVO {
     public List<Example> getExamples() { return examples; }
     public void setExamples(List<Example> examples) { this.examples = examples; }
 
+    //调用工具？，内部静态类
     public static class Example {
         private String title;
         private String describe;

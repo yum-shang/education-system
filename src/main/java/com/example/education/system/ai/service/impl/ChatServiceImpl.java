@@ -58,6 +58,7 @@ public class ChatServiceImpl implements ChatService {
     private static final String CANCEL_KEY_PREFIX = "ai:cancel:";
     private static final Duration CANCEL_TTL = Duration.ofMinutes(30);
 
+    //@redis启动压缩上下文，正常运行，redis没启动不进行压缩，全部给ai
     @Override
     public Flux<String> chat(String question, String sessionId) {
         if (sessionId == null || sessionId.isBlank()) {
@@ -76,15 +77,17 @@ public class ChatServiceImpl implements ChatService {
         return chatLegacy(question, sessionId);
     }
 
+    //验证会话存在，对会话消息进行保存
     private Flux<String> chatWithRollingSummary(String question, String sessionId) {
-        ConversationContextAssembler assembler = contextAssemblerProvider.getIfAvailable();
-        RedisHotMessageStore hotStore = hotMessageStoreProvider.getIfAvailable();
-        RollingSummaryService rollingSummary = rollingSummaryServiceProvider.getIfAvailable();
+        ConversationContextAssembler assembler = contextAssemblerProvider.getIfAvailable();//
+        RedisHotMessageStore hotStore = hotMessageStoreProvider.getIfAvailable();//历史热信息
+        RollingSummaryService rollingSummary = rollingSummaryServiceProvider.getIfAvailable();//滚动总结
         if (assembler == null || hotStore == null || rollingSummary == null) {
             log.error("摘要模式已开启但摘要组件未装配, sessionId={}", sessionId);
             return Flux.just(sseEventEncoder.encode("摘要服务未就绪", SseEventType.COMPLETE));
         }
 
+        //确保会话没有结束
         try {
             chatSessionService.ensureSessionActive(sessionId);
             chatSessionService.touchSession(sessionId);
@@ -101,6 +104,7 @@ public class ChatServiceImpl implements ChatService {
             log.error("保存热消息(user)失败, sessionId={}", sessionId, e);
         }
 
+        //将问题和回答传给streamChat进行输出，并在streamChat调用保存消息
         return streamChat(sessionId, messages, (answer, sid) -> {
             try {
                 if (!answer.isEmpty()) {
@@ -140,6 +144,7 @@ public class ChatServiceImpl implements ChatService {
             log.error("保存用户消息失败, sessionId={}", sessionId, e);
         }
 
+        //保存成功后，调用流式输出
         return streamChat(sessionId, messages, (answer, sid) -> {
             try {
                 if (!answer.isEmpty()) {
@@ -151,6 +156,7 @@ public class ChatServiceImpl implements ChatService {
         });
     }
 
+    //流式对话，在会话中再开一个
     private Flux<String> streamChat(String sessionId, List<Message> messages,
                                     AssistantPersistCallback onComplete) {
         String requestId = UUID.randomUUID().toString();

@@ -33,13 +33,15 @@ public class RollingSummaryServiceImpl implements RollingSummaryService {
     private final AiChatProperties aiChatProperties;
     private final RedisHotMessageStore redisHotMessageStore;
     private final SessionSummaryService sessionSummaryService;
-    private final SummaryPromptProvider summaryPromptProvider;
+    private final SummaryPromptProvider summaryPromptProvider;//对提示词进行拼接
     private final SummaryConcurrencyCoordinator concurrencyCoordinator;
     private final ChatClient chatClient;
 
     @Override
     @Async(AiAsyncConfig.SUMMARY_EXECUTOR)
     public void triggerIfNeeded(String sessionId) {
+
+        //只有配置了总结，会话数达到了上限，的才能获得本次的锁
         if (!aiChatProperties.isSummaryEnabled()) {
             return;
         }
@@ -47,12 +49,12 @@ public class RollingSummaryServiceImpl implements RollingSummaryService {
         if (redisHotMessageStore.getCount(sessionId) < batchSize) {
             return;
         }
-
         if (!concurrencyCoordinator.tryLock(sessionId)) {
             log.debug("未获取摘要锁，跳过本次触发, sessionId={}", sessionId);
             return;
         }
 
+        //拿到锁
         List<ChatMessage> batch = null;
         try {
             batch = concurrencyCoordinator.captureBatchForSummary(sessionId);
@@ -60,6 +62,7 @@ public class RollingSummaryServiceImpl implements RollingSummaryService {
                 return;
             }
 
+            //拼接上下文
             String oldSummary = sessionSummaryService.findBySessionId(sessionId)
                     .map(ChatSessionSummary::getSummaryContent)
                     .orElse("");
@@ -67,8 +70,9 @@ public class RollingSummaryServiceImpl implements RollingSummaryService {
             String prompt = summaryPromptProvider.build(oldSummary, batch);
             String newSummary = chatClient.prompt()
                     .user(prompt)
-                    .call()
-                    .content();
+                    .call()//掉大模型
+                    .content();//获得回答
+
 
             sessionSummaryService.upsertRolling(sessionId, newSummary, batch.size());
             concurrencyCoordinator.onSummarySuccess(sessionId, batch);
@@ -82,7 +86,7 @@ public class RollingSummaryServiceImpl implements RollingSummaryService {
                 concurrencyCoordinator.onSummaryFailure(sessionId, List.of());
             }
         } finally {
-            concurrencyCoordinator.releaseLock(sessionId);
+            concurrencyCoordinator.releaseLock(sessionId);//释放锁
         }
     }
 }
