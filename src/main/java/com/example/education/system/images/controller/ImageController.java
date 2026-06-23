@@ -34,7 +34,7 @@ public class ImageController {
     @Autowired
     private HttpServletRequest request;
 
-    @Value("${file.upload.path}")
+    @Value("${file.upload.path:./uploads/images}")
     private String uploadPath;
 
     private Integer getUserIdFromToken() {

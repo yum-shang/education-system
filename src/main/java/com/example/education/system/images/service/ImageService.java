@@ -37,7 +37,7 @@ public class ImageService {
     @Autowired
     private ImageRepository imageRepository;
 
-    @Value("${file.upload.path}")
+    @Value("${file.upload.path:./uploads/images}")
     private String uploadPath;
 
     @Transactional

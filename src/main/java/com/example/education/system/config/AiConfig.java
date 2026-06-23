@@ -34,9 +34,9 @@ public class AiConfig {
     @Bean
     @ConditionalOnProperty(name = "ai.active", havingValue = "deepseek", matchIfMissing = true)
     public ChatModel deepseekChatModel(
-            @Value("${spring.ai.openai.api-key}") String apiKey,
-            @Value("${spring.ai.openai.base-url}") String baseUrl,
-            @Value("${spring.ai.openai.chat.options.model}") String model) {
+            @Value("${spring.ai.openai.api-key:sk-default}") String apiKey,
+            @Value("${spring.ai.openai.base-url:https://api.deepseek.com}") String baseUrl,
+            @Value("${spring.ai.openai.chat.options.model:deepseek-chat}") String model) {
 
         OpenAiApi api = OpenAiApi.builder()
                 .apiKey(apiKey)
@@ -54,9 +54,9 @@ public class AiConfig {
     @Bean
     @ConditionalOnProperty(name = "ai.active", havingValue = "vllm")
     public ChatModel vllmChatModel(
-            @Value("${ai.vllm.base-url}") String baseUrl,
-            @Value("${ai.vllm.api-key}") String apiKey,
-            @Value("${ai.vllm.model}") String model) {
+            @Value("${ai.vllm.base-url:http://localhost:8000}") String baseUrl,
+            @Value("${ai.vllm.api-key:not-needed}") String apiKey,
+            @Value("${ai.vllm.model:/models/Qwen2.5-7B-Instruct-AWQ}") String model) {
 
         OpenAiApi api = OpenAiApi.builder()
                 .apiKey(apiKey)

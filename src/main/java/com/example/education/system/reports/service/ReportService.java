@@ -29,7 +29,7 @@ public class ReportService {
     @Autowired
     private ReportRepository reportRepository;
 
-    @Value("${report.storage.path}")
+    @Value("${report.storage.path:./uploads/reports}")
     private String reportStoragePath;
 
     @Transactional
